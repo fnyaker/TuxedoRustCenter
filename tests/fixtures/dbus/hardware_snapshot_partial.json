@@ -1,0 +1,39 @@
+{
+  "device": {
+    "available": true,
+    "vendor": "TUXEDO Computers GmbH"
+  },
+  "charging": {
+    "available": true,
+    "writeSupported": false,
+    "chargeTypes": []
+  },
+  "lighting": {
+    "available": false
+  },
+  "odm": {
+    "available": false,
+    "platformProfile": {
+      "available": false
+    }
+  },
+  "nvidia": {
+    "available": false
+  },
+  "webcam": {
+    "switchAvailable": false
+  },
+  "fnLock": {
+    "supported": false
+  },
+  "prime": {
+    "available": false
+  },
+  "ycbcr": {
+    "available": false,
+    "ports": [],
+    "pendingModeReapply": false,
+    "applied": true,
+    "errors": []
+  }
+}

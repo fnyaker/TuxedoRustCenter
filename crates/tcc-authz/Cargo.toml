@@ -1,0 +1,13 @@
+[package]
+name = "tcc-authz"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Autorisation polkit partagée par tccd et tccd-admin (AD-3, AD-4, AD-9)"
+
+[dependencies]
+async-trait.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+zbus.workspace = true

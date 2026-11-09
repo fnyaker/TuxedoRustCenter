@@ -1,0 +1,6 @@
+{
+  "method": "SetTdpValues",
+  "arguments": {
+    "values": "35"
+  }
+}

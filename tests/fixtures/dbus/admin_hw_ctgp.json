@@ -1,0 +1,10 @@
+{
+  "method": "SetNvidiaCtgpOffset",
+  "arguments": {
+    "watts": 25
+  },
+  "expected": {
+    "accepted": true,
+    "bound": "dynamic"
+  }
+}

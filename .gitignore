@@ -1,0 +1,17 @@
+/target
+**/*.rs.bk
+*.pdb
+/build
+/dist
+.idea/
+.vscode/
+*.swp
+
+# Fichiers générés localement, contiennent des chemins absolus personnels.
+.qmlls.ini
+*.qmlls.ini
+compile_commands.json
+
+# Référence amont TUXEDO Control Center (GPL-3.0) : copie locale non versionnée.
+# Récupérer depuis https://github.com/tuxedocomputers/tuxedo-control-center
+/tuxedo-control-center-master

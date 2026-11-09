@@ -1,0 +1,20 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=TUXEDO Control Center
+GenericName=System Control Center
+GenericName[fr]=Centre de contrôle système
+GenericName[de]=Systemkontrollzentrum
+Comment=Control performance, cooling, display and charging on TUXEDO laptops
+Comment[fr]=Contrôler les performances, le refroidissement, l'affichage et la charge des ordinateurs portables TUXEDO
+Comment[de]=Leistung, Kühlung, Anzeige und Laden von TUXEDO-Notebooks steuern
+Exec=tuxedo-rust-center
+Icon=tuxedo-rust-center
+Terminal=false
+Categories=Settings;HardwareSettings;
+Keywords=fan;fan control;temperature;profile;battery;charging;backlight;keyboard;
+Keywords[fr]=ventilateur;température;profil;batterie;charge;rétroéclairage;clavier;
+Keywords[de]=Lüfter;Temperatur;Profil;Akku;Laden;Tastaturbeleuchtung;Tastatur;
+StartupNotify=true
+StartupWMClass=tuxedo-rust-center
+X-GNOME-UsesNotifications=true

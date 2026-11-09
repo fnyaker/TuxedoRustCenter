@@ -1,0 +1,14 @@
+{
+  "contractVersion": 1,
+  "revision": 7,
+  "ppdProfile": "balanced",
+  "powerSource": "battery",
+  "manualOverride": false,
+  "activeProfile": {
+    "id": "__office__",
+    "name": "Office",
+    "description": "Bureau",
+    "isPreset": true,
+    "source": "stateMatrix"
+  }
+}

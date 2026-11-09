@@ -1,0 +1,25 @@
+{
+  "charging": {
+    "available": true,
+    "writeSupported": true,
+    "profileWritable": true,
+    "priorityWritable": false,
+    "thresholdsWritable": true,
+    "chargeTypeAvailable": true,
+    "chargeTypeWritable": true,
+    "chargeTypes": ["Standard", "Adaptive", "Custom"],
+    "profiles": ["balanced"],
+    "profile": "balanced",
+    "priorities": [],
+    "priority": null,
+    "battery": "BAT0",
+    "startThreshold": 50,
+    "endThreshold": 90,
+    "startThresholds": [40, 50, 60],
+    "endThresholds": [80, 90, 100],
+    "chargeType": "Adaptive",
+    "thresholdsAvailable": true,
+    "applied": true,
+    "errors": []
+  }
+}

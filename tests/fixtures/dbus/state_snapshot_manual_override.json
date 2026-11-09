@@ -1,0 +1,14 @@
+{
+  "contractVersion": 1,
+  "revision": 8,
+  "ppdProfile": "performance",
+  "powerSource": "ac",
+  "manualOverride": true,
+  "activeProfile": {
+    "id": "custom-gaming-0001",
+    "name": "Gaming",
+    "description": "Profil personnalisé avec écran haute fréquence",
+    "isPreset": false,
+    "source": "manualOverride"
+  }
+}

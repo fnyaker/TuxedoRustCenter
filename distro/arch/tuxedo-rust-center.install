@@ -1,0 +1,58 @@
+# shellcheck shell=bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Scriptlet d'installation Arch Linux.
+#
+# Le paquet active les units mais ne les démarre pas : l'installation peut
+# avoir lieu dans un chroot (arch-chroot, image système) sans matériel.
+# `systemctl start tccd.service` (ou un redémarrage) suffit ensuite.
+#
+# tccd-user.service n'est pas activé ici : le paquet installe
+# /usr/lib/systemd/user/graphical-session.target.wants/tccd-user.service, ce
+# qui l'active pour toutes les sessions graphiques.
+
+post_install() {
+    # Lien d'activation laissé par l'ancien TCC : l'unité tccd-sleep n'existe
+    # plus (REVIEW_JALON1 R-06).
+    if [ -L /etc/systemd/system/sleep.target.wants/tccd-sleep.service ] \
+        && [ ! -e /usr/lib/systemd/system/tccd-sleep.service ]; then
+        rm -f /etc/systemd/system/sleep.target.wants/tccd-sleep.service
+    fi
+    systemctl daemon-reload >/dev/null 2>&1 || true
+
+    if [ -d /opt/tuxedo-control-center ] || [ -e /usr/bin/tuxedo-control-center ]; then
+        # Ne pas activer : l'ancien daemon ne doit pas être doublé au boot.
+        echo "AVERTISSEMENT: une installation de TUXEDO Control Center a été" >&2
+        echo "détectée dans /opt. Les deux daemons ne doivent pas piloter le" >&2
+        echo "matériel simultanément :" >&2
+        echo "  systemctl disable --now tccd" >&2
+        echo "  systemctl enable --now tccd.service" >&2
+        echo "Voir /usr/share/doc/tuxedo-rust-center/MIGRATION.md" >&2
+    else
+        systemctl enable tccd.service >/dev/null 2>&1 || true
+        echo "TuxedoRustCenter installé. Démarrer le daemon avec :" >&2
+        echo "  systemctl start tccd.service" >&2
+    fi
+}
+
+post_upgrade() {
+    systemctl daemon-reload >/dev/null 2>&1 || true
+    # Redémarre le daemon seulement s'il tourne déjà.
+    systemctl try-restart tccd.service >/dev/null 2>&1 || true
+}
+
+pre_remove() {
+    # tccd-admin / tccd-admin-hw n'existent qu'avec _with_admin=1 /
+    # _with_admin_hw=1 ; chaque stop est un no-op sinon.
+    systemctl stop tccd-admin-hw.service >/dev/null 2>&1 || true
+    systemctl stop tccd-admin.service >/dev/null 2>&1 || true
+    systemctl disable tccd.service >/dev/null 2>&1 || true
+    systemctl stop tccd.service >/dev/null 2>&1 || true
+}
+
+post_remove() {
+    systemctl daemon-reload >/dev/null 2>&1 || true
+}
+
+# Ces fonctions ne doivent jamais faire échouer pacman.
+true

@@ -1,0 +1,11 @@
+{
+  "method": "SetOdmProfile",
+  "arguments": {
+    "name": "performance"
+  },
+  "expected": {
+    "accepted": true,
+    "source": "platform_profile",
+    "owner": "tcc"
+  }
+}

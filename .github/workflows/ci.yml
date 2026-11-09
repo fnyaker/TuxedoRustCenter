@@ -1,0 +1,182 @@
+name: CI
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  fmt:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --all --check
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - name: Installer Qt 6
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qt6-base-dev qt6-declarative-dev qt6-tools-dev \
+            qt6-l10n-tools libgl1-mesa-dev
+      - run: cargo clippy --workspace --all-targets --locked -- -D warnings
+
+  test:
+    name: Tests (Debian/Ubuntu)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Installer Qt 6
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qt6-base-dev qt6-declarative-dev qt6-tools-dev \
+            qt6-l10n-tools libgl1-mesa-dev
+      - run: cargo test --workspace --locked
+      - name: Tests tcc-core avec dev-overrides
+        run: cargo test -p tcc-core --features dev-overrides --locked
+
+  integration:
+    name: Intégration (D-Bus, sans Qt)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Installer D-Bus
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y dbus
+      - name: Crates stables (sans Qt)
+        run: |
+          cargo test --no-fail-fast --locked \
+            -p tcc-core -p tcc-ipc -p tcc-authz -p tcc-admin \
+            -p tcc-hw -p tcc-user -p tcc-cli
+      - name: Tests du daemon sur un bus de session dédié
+        run: dbus-run-session -- cargo test -p tcc-daemon --locked
+
+  admin-foundation:
+    # `tccd-admin` n'a ni service D-Bus ni privilège à ce stade : ces tests
+    # doivent tourner en utilisateur non privilégié et ne rien écrire hors de
+    # répertoires temporaires.
+    name: Fondation admin (sans root)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo check -p tcc-authz -p tcc-admin --locked
+      - run: cargo test -p tcc-ipc -p tcc-authz -p tcc-admin --locked
+      - run: cargo clippy -p tcc-authz -p tcc-admin --all-targets --locked -- -D warnings
+
+  qml:
+    # Ubuntu 24.04 ne fournit que Qt 6.4 (sans QtQuick.Effects, requis par les
+    # composants) : les tests QML tournent dans un conteneur Arch qui fournit
+    # Qt 6.10+, les modules QML et `qmltestrunner` dans un seul paquet.
+    name: QML (Qt Quick Test, Arch)
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    timeout-minutes: 20
+    steps:
+      - name: Installer Qt 6 (QML, SVG, outils de test)
+        run: pacman -Syu --noconfirm --needed qt6-declarative qt6-svg
+      - uses: actions/checkout@v4
+      - name: Vérifier Qt 6
+        run: |
+          test -x /usr/lib/qt6/bin/qmllint
+          test -x /usr/lib/qt6/bin/qmltestrunner
+          /usr/lib/qt6/bin/qmltestrunner -help | head -n 1
+      - name: Lint + tests QML
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: sh crates/tcc-gui/tools/qml-check.sh
+
+  test-arch:
+    name: Tests (Arch Linux, sans Qt)
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Installer Rust
+        run: pacman -Syu --noconfirm --needed rust
+      - uses: actions/checkout@v4
+      - run: |
+          cargo test --locked -p tcc-core -p tcc-ipc -p tcc-authz -p tcc-admin \
+            -p tcc-hw -p tcc-user -p tcc-cli
+      - name: Crates sans Qt (daemon sur bus de session)
+        run: pacman -S --noconfirm --needed dbus && dbus-run-session -- cargo test --locked -p tcc-daemon
+
+  msrv:
+    name: MSRV 1.85
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@1.85.0
+      - uses: Swatinem/rust-cache@v2
+      - name: Installer Qt 6
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qt6-base-dev qt6-declarative-dev qt6-tools-dev \
+            qt6-l10n-tools libgl1-mesa-dev
+      - run: cargo check --workspace --locked
+
+  gui:
+    name: GUI Qt 6
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - name: Installer Qt 6
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y qt6-base-dev qt6-declarative-dev qt6-tools-dev \
+            qt6-l10n-tools libgl1-mesa-dev
+      - name: Vérifier Qt 6 (base et Quick)
+        run: |
+          pkg-config --modversion Qt6Core
+          pkg-config --modversion Qt6Quick
+      - run: cargo check -p tcc-gui --locked
+
+  deny:
+    name: cargo-deny
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check
+
+  audit:
+    name: cargo-audit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: rustsec/audit-check@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}

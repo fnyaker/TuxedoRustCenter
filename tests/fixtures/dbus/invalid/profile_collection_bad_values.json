@@ -1,0 +1,35 @@
+[
+  {
+    "id": "custom-invalid-0001",
+    "name": "Invalid",
+    "description": "",
+    "display": {
+      "brightness": 250,
+      "useBrightness": true,
+      "refreshRate": 5000,
+      "useRefRate": true
+    },
+    "cpu": {
+      "onlineCores": 0,
+      "scalingMinFrequency": 200000,
+      "scalingMaxFrequency": 100000,
+      "governor": "powersave",
+      "energyPerformancePreference": "balance_performance"
+    },
+    "webcam": {},
+    "fan": {
+      "useControl": true,
+      "fanProfile": "Custom",
+      "minimumFanspeed": 90,
+      "maximumFanspeed": 10,
+      "offsetFanspeed": 0,
+      "customFanCurve": {
+        "tableCPU": [{ "temp": 70, "speed": 80 }, { "temp": 70, "speed": 90 }],
+        "tableGPU": []
+      }
+    },
+    "odmProfile": {},
+    "odmPowerLimits": { "tdpValues": [30, 20] },
+    "nvidiaPowerCTRLProfile": { "cTGPOffset": -5 }
+  }
+]

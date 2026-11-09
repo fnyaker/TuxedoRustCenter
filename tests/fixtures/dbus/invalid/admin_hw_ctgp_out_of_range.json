@@ -1,0 +1,6 @@
+{
+  "method": "SetNvidiaCtgpOffset",
+  "arguments": {
+    "watts": 201
+  }
+}

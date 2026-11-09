@@ -1,0 +1,15 @@
+{
+  "contractVersion": 1,
+  "service": "com.tuxedocomputers.tccd.User",
+  "path": "/com/tuxedocomputers/tccd/User",
+  "interface": "com.tuxedocomputers.tccd.User1",
+  "methods": [
+    "Ping",
+    "GetVersion",
+    "GetContractVersion",
+    "GetDisplayInfoJSON",
+    "GetUvcWriteSupported",
+    "SetUvcControl"
+  ],
+  "readOnly": false
+}

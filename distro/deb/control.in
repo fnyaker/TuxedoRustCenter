@@ -1,0 +1,28 @@
+Package: tuxedo-rust-center
+Version: @VERSION@
+Section: utils
+Priority: optional
+Architecture: @ARCH@
+Maintainer: TuxedoRustCenter contributors <maintainers@tuxedorustcenter.invalid>
+Installed-Size: @INSTALLED_SIZE@
+Depends: libc6 (>= 2.39), libgcc-s1, libstdc++6 (>= 13), libqt6core6t64 | libqt6core6, libqt6gui6, libqt6widgets6, libqt6qml6, libqt6quick6, libqt6quickcontrols2-6, libqt6quicktemplates2-6, libqt6svg6, qt6-svg-plugins, qt6-qpa-plugins, qml6-module-qtcore, qml6-module-qt-labs-platform, qml6-module-qtquick, qml6-module-qtquick-controls, qml6-module-qtquick-dialogs, qml6-module-qtquick-effects, qml6-module-qtquick-layouts, qml6-module-qtquick-shapes, qml6-module-qtquick-templates, qml6-module-qtquick-window, qml6-module-qtqml-models, qml6-module-qtqml-workerscript
+Recommends: tuxedo-drivers | tuxedo-keyboard, power-profiles-daemon, upower, polkitd, hicolor-icon-theme
+Suggests: tuxedo-tomte, tuxedo-systeminfos, prime-select, switcheroo-control, nvidia-driver, kscreen
+Conflicts: tuxedo-control-center, tuxedofancontrol
+Replaces: tuxedo-control-center, tuxedofancontrol
+Provides: tuxedo-control-center
+Homepage: https://github.com/fnyaker/TuxedoRustCenter
+Description: native Qt 6 TUXEDO Control Center rewrite
+ TuxedoRustCenter is a 100% Rust rewrite of the TUXEDO Control Center,
+ with a native Qt 6 GUI, a privileged Rust daemon and an unprivileged
+ session agent.
+ .
+ Features include:
+  * hardware profiles for CPU limits, fans, display, webcam and charging;
+  * automatic profile switching from power-profiles-daemon and the
+    AC/battery state;
+  * internal display refresh rate per profile on X11 and Wayland;
+  * system dashboard with temperatures, power and fan speeds.
+ .
+ The package installs no file under /opt and requires no Node/Python
+ runtime.

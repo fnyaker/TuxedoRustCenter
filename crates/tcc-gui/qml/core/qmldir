@@ -1,0 +1,16 @@
+module TuxedoRustCenter
+singleton Theme 1.0 Theme.qml
+singleton Strings 1.0 Strings.qml
+singleton AppState 1.0 AppState.qml
+singleton DemoData 1.0 DemoData.qml
+singleton LiveData 1.0 LiveData.qml
+singleton HardwareData 1.0 HardwareData.qml
+singleton AdminState 1.0 AdminState.qml
+singleton ProfileRules 1.0 ProfileRules.qml
+singleton SettingsData 1.0 SettingsData.qml
+singleton ShutdownTimerData 1.0 ShutdownTimerData.qml
+singleton PowerBlockerData 1.0 PowerBlockerData.qml
+singleton AutostartData 1.0 AutostartData.qml
+singleton AdminHwData 1.0 AdminHwData.qml
+singleton AgentData 1.0 AgentData.qml
+singleton BridgeState 1.0 BridgeState.qml

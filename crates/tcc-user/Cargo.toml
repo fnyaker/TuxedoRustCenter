@@ -1,0 +1,28 @@
+[package]
+name = "tcc-user"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Agent de session utilisateur tccd-user (résolution et refresh rate)"
+
+[dependencies]
+async-trait.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tcc-core = { path = "../tcc-core" }
+tcc-hw = { path = "../tcc-hw" }
+tcc-ipc = { path = "../tcc-ipc" }
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+# x11rb est 100 % Rust : aucune dépendance aux bibliothèques X11 de
+# développement (libX11/libxcb) n'est nécessaire. `allow-unsafe-code` est
+# volontairement désactivé.
+x11rb = { version = "0.13", default-features = false, features = ["randr"] }
+zbus.workspace = true
+
+[dev-dependencies]
+libc.workspace = true
+tempfile.workspace = true

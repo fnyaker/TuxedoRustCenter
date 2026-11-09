@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC
+    "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+    "https://specifications.freedesktop.org/PolicyKit/1.0/policyconfig.dtd">
+<policyconfig>
+
+    <vendor>TUXEDO Computers GmbH</vendor>
+    <vendor_url>https://www.tuxedocomputers.com/</vendor_url>
+
+    <!--
+      ÉTAT : actions DÉCLARÉES, NON ENCORE APPLIQUÉES PAR LE CODE.
+
+      L'application de ces actions par tccd/tccd-admin est en cours
+      d'implémentation et doit être validée (phase 1). Ce fichier prépare les
+      phases admin ; il ne faut PAS affirmer dans la doc ou les commentaires
+      que tccd/tccd-admin « vérifie » ces actions tant que les tests
+      d'autorisation ne sont pas passés.
+      Voir docs/packaging/SECURITY.md §3, docs/security/ADMIN_DESIGN.md §3 et
+      docs/security/REVIEW_JALON1.md R-04.
+
+      Règles (REVIEW_JALON1 §4.2) :
+        - IDs versionnés `com.tuxedocomputers.tccd1.*` ;
+        - allow_any = no, allow_inactive = no partout ;
+        - auth_admin SANS cache pour TOUTES les actions (ADMIN_DESIGN §3.2) ;
+          l'ancienne action assign-profile (_keep) est supprimée ;
+        - AUCUNE annotation org.freedesktop.policykit.exec.path / exec.argv1 /
+          allow_gui : une action ne doit jamais être une primitive pkexec ;
+        - messages explicites (l'utilisateur doit savoir ce qu'il autorise).
+
+      Le daemon devra utiliser le sujet `system-bus-name` du nom unique de
+      l'appelant, jamais un PID fourni par le client.
+    -->
+
+    <!-- Écriture persistante des profils (contient TDP/ODM/cTGP) : pas de
+         cache. Remplace l'ancienne action assign-profile (_keep), supprimée
+         pour éviter une fenêtre de 5 min sans nouveau dialogue (ADMIN_DESIGN
+         §3.2, R-09). -->
+    <action id="com.tuxedocomputers.tccd1.profiles">
+        <description>Save TuxedoRustCenter hardware profiles</description>
+        <description xml:lang="fr">Enregistrer les profils matériels TuxedoRustCenter</description>
+        <description xml:lang="de">TuxedoRustCenter-Hardwareprofile speichern</description>
+        <message>Authentication is required to save hardware profiles</message>
+        <message xml:lang="fr">Une authentification est requise pour enregistrer les profils matériels</message>
+        <message xml:lang="de">Zum Speichern der Hardwareprofile ist eine Authentifizierung erforderlich</message>
+        <defaults>
+            <allow_any>no</allow_any>
+            <allow_inactive>no</allow_inactive>
+            <allow_active>auth_admin</allow_active>
+        </defaults>
+    </action>
+
+    <!-- Réglages globaux non destructifs (unités, activations, thème). -->
+    <action id="com.tuxedocomputers.tccd1.settings">
+        <description>Change TuxedoRustCenter settings</description>
+        <description xml:lang="fr">Modifier les réglages de TuxedoRustCenter</description>
+        <description xml:lang="de">Einstellungen von TuxedoRustCenter ändern</description>
+        <message>Authentication is required to change the TuxedoRustCenter settings</message>
+        <message xml:lang="fr">Une authentification est requise pour modifier les réglages de TuxedoRustCenter</message>
+        <message xml:lang="de">Zum Ändern der TuxedoRustCenter-Einstellungen ist eine Authentifizierung erforderlich</message>
+        <defaults>
+            <allow_any>no</allow_any>
+            <allow_inactive>no</allow_inactive>
+            <allow_active>auth_admin</allow_active>
+        </defaults>
+    </action>
+
+    <!-- Limites matérielles : TDP (PL1/PL2/PL4), profil ODM et offset cTGP
+         NVIDIA. Utilisée par tccd-admin-hw (AdminHw1.SetTdpValues,
+         SetOdmProfile, SetOdmProfileOverride, SetNvidiaCtgpOffset). Pas de
+         cache `_keep` : chaque écriture redemande l'authentification. -->
+    <action id="com.tuxedocomputers.tccd1.power-limits">
+        <description>Change CPU/GPU power limits (TDP, cTGP)</description>
+        <description xml:lang="fr">Modifier les limites de puissance CPU/GPU (TDP, cTGP)</description>
+        <description xml:lang="de">CPU/GPU-Leistungsgrenzen ändern (TDP, cTGP)</description>
+        <message>Authentication is required to change CPU/GPU power limits</message>
+        <message xml:lang="fr">Une authentification est requise pour modifier les limites de puissance CPU/GPU</message>
+        <message xml:lang="de">Zum Ändern der CPU/GPU-Leistungsgrenzen ist eine Authentifizierung erforderlich</message>
+        <defaults>
+            <allow_any>no</allow_any>
+            <allow_inactive>no</allow_inactive>
+            <allow_active>auth_admin</allow_active>
+        </defaults>
+    </action>
+
+    <!-- Charge : seuils, profil de charge, priorité. -->
+    <action id="com.tuxedocomputers.tccd1.charging">
+        <description>Change battery charging thresholds and profile</description>
+        <description xml:lang="fr">Modifier les seuils et le profil de charge de la batterie</description>
+        <description xml:lang="de">Ladeschwellen und Ladeprofil des Akkus ändern</description>
+        <message>Authentication is required to change battery charging settings</message>
+        <message xml:lang="fr">Une authentification est requise pour modifier les réglages de charge de la batterie</message>
+        <message xml:lang="de">Zum Ändern der Akku-Ladeeinstellungen ist eine Authentifizierung erforderlich</message>
+        <defaults>
+            <allow_any>no</allow_any>
+            <allow_inactive>no</allow_inactive>
+            <allow_active>auth_admin</allow_active>
+        </defaults>
+    </action>
+
+    <!-- Affichage : workaround YCbCr 4:2:0, résolution persistante. -->
+    <action id="com.tuxedocomputers.tccd1.display">
+        <description>Change display output configuration</description>
+        <description xml:lang="fr">Modifier la configuration de sortie d'affichage</description>
+        <description xml:lang="de">Ausgabekonfiguration des Bildschirms ändern</description>
+        <message>Authentication is required to change display output settings</message>
+        <message xml:lang="fr">Une authentification est requise pour modifier les réglages de sortie d'affichage</message>
+        <message xml:lang="de">Zum Ändern der Bildschirmausgabe ist eine Authentifizierung erforderlich</message>
+        <defaults>
+            <allow_any>no</allow_any>
+            <allow_inactive>no</allow_inactive>
+            <allow_active>auth_admin</allow_active>
+        </defaults>
+    </action>
+
+    <!-- PRIME / mode graphique (iGPU, dGPU, on-demand). -->
+    <action id="com.tuxedocomputers.tccd1.prime-select">
+        <description>Switch the graphics mode (PRIME)</description>
+        <description xml:lang="fr">Changer le mode graphique (PRIME)</description>
+        <description xml:lang="de">Grafikmodus wechseln (PRIME)</description>
+        <message>Authentication is required to switch the graphics mode</message>
+        <message xml:lang="fr">Une authentification est requise pour changer le mode graphique</message>
+        <message xml:lang="de">Zum Wechseln des Grafikmodus ist eine Authentifizierung erforderlich</message>
+        <defaults>
+            <allow_any>no</allow_any>
+            <allow_inactive>no</allow_inactive>
+            <allow_active>auth_admin</allow_active>
+        </defaults>
+    </action>
+
+
+    <!-- Tomte : exécution via tccd-admin, allowlist d'arguments. -->
+    <action id="com.tuxedocomputers.tccd1.tomte-run">
+        <description>Run the TUXEDO tomte system tool</description>
+        <description xml:lang="fr">Exécuter l'outil système TUXEDO tomte</description>
+        <description xml:lang="de">Das TUXEDO-Systemwerkzeug tomte ausführen</description>
+        <message>Authentication is required to run the TUXEDO tomte system tool</message>
+        <message xml:lang="fr">Une authentification est requise pour exécuter l'outil système TUXEDO tomte</message>
+        <message xml:lang="de">Zum Ausführen des TUXEDO-Systemwerkzeugs tomte ist eine Authentifizierung erforderlich</message>
+        <defaults>
+            <allow_any>no</allow_any>
+            <allow_inactive>no</allow_inactive>
+            <allow_active>auth_admin</allow_active>
+        </defaults>
+        <!-- Pas d'annotate exec.* : tccd-admin invoque /usr/bin/tuxedo-tomte par
+             Command::new (chemin absolu, arguments séparés, env_clear, timeout),
+             jamais par pkexec. -->
+    </action>
+
+    <!-- WebFAI / installation de paquets. -->
+    <action id="com.tuxedocomputers.tccd1.packages">
+        <description>Install packages or run the WebFAI installer</description>
+        <description xml:lang="fr">Installer des paquets ou lancer l'installateur WebFAI</description>
+        <description xml:lang="de">Pakete installieren oder den WebFAI-Installer starten</description>
+        <message>Authentication is required to install packages</message>
+        <message xml:lang="fr">Une authentification est requise pour installer des paquets</message>
+        <message xml:lang="de">Zur Paketinstallation ist eine Authentifizierung erforderlich</message>
+        <defaults>
+            <allow_any>no</allow_any>
+            <allow_inactive>no</allow_inactive>
+            <allow_active>auth_admin</allow_active>
+        </defaults>
+    </action>
+
+</policyconfig>

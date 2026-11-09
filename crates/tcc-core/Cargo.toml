@@ -1,0 +1,28 @@
+[package]
+name = "tcc-core"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Modèles, profils, settings et moteur de bascule de TuxedoRustCenter"
+
+[features]
+default = []
+# Racine de configuration injectable pour le développement (`TCC_CONFIG_DIR`).
+# Cette feature ne doit jamais être activée dans un paquet de release : elle
+# permet de rediriger l'état persistant, et est refusée en root (D7).
+dev-overrides = []
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+uuid.workspace = true
+
+[target.'cfg(unix)'.dependencies]
+# Utilisé uniquement pour O_NOFOLLOW lors de la lecture des fichiers de
+# configuration (protection contre les liens symboliques).
+libc.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

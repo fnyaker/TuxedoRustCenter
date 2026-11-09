@@ -1,0 +1,8 @@
+{
+  "contractVersion": 2,
+  "revision": 9,
+  "ppdProfile": "balanced",
+  "powerSource": "battery",
+  "manualOverride": false,
+  "activeProfile": null
+}

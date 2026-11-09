@@ -1,0 +1,35 @@
+{
+  "available": true,
+  "session": {
+    "type": "wayland",
+    "desktop": "Hyprland",
+    "waylandDisplay": "wayland-1",
+    "display": null
+  },
+  "backend": {
+    "kind": "hyprland",
+    "name": "hyprland",
+    "available": true
+  },
+  "internalOutput": {
+    "name": "eDP-1",
+    "connected": true,
+    "enabled": true,
+    "hasInternalDisplay": true,
+    "currentMode": {
+      "width": "2560",
+      "height": 1600,
+      "refreshHz": 60.0
+    },
+    "modes": {
+      "first": {
+        "width": 2560,
+        "height": 1600,
+        "refreshHz": "60"
+      }
+    }
+  },
+  "supported": true,
+  "dryRun": false,
+  "error": null
+}

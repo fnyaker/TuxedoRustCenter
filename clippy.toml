@@ -1,0 +1,22 @@
+# Configuration clippy commune (R-17).
+#
+# `disallowed-methods` n'est volontairement pas activé ici : une règle globale
+# sur `std::process::Command::new`, `std::fs::write` ou `std::fs::File::create`
+# s'applique à tout le workspace et casserait des usages légitimes hors
+# périmètre de cette revue :
+#
+# - `tcc-hw/src/command.rs` encapsule déjà `Command::new` dans une allowlist
+#   avec arguments séparés (propriétaire : tuxedo-hardware) ;
+# - `tcc-core`, `tcc-hw` et `tcc-user` utilisent `fs::write`/`File::create`
+#   dans leur persistance atomique et leurs tests.
+#
+# Les garde-fous réellement activés sont les attributs de crate :
+# `#![forbid(unsafe_code)]` et
+# `#![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used))]`
+# dans `tcc-core`, `tcc-ipc`, `tccd`, `tcc-cli` et `tcc-gui` ; `tcc-hw` et
+# `tcc-user` dénient `clippy::unwrap_used` (leur `expect` en production est
+# revu séparément).
+#
+# Une allowlist `disallowed-methods` par crate (ou `[workspace.lints]`) doit
+# être arbitrée avec rust-core/security avant activation globale.
+msrv = "1.85"

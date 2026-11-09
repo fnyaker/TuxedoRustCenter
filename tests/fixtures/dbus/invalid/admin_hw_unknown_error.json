@@ -1,0 +1,11 @@
+{
+  "namespace": "org.tuxedocomputers.tccd.AdminHw1.Error",
+  "cases": [
+    {
+      "code": "Timeout",
+      "method": "SetOdmProfile",
+      "reason": "polkit.timeout",
+      "dbusName": "org.tuxedocomputers.tccd.AdminHw1.Error.Timeout"
+    }
+  ]
+}

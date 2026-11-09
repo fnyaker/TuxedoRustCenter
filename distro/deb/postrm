@@ -1,0 +1,36 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# postrm du paquet Debian tuxedo-rust-center.
+#
+# remove : désactive les units, recharge systemd, conserve l'état.
+# purge  : supprime l'état mutable /var/lib/tuxedo-rust-center.
+#
+# /etc/tcc (ancien TCC) et /etc/tuxedo-rust-center ne sont JAMAIS supprimés
+# ici : la migration et la configuration administrateur restent sous contrôle
+# de l'utilisateur.
+
+set -e
+
+case "$1" in
+    remove)
+        if command -v deb-systemd-helper >/dev/null 2>&1; then
+            deb-systemd-helper disable tccd.service >/dev/null || true
+        fi
+        if [ -d /run/systemd/system ]; then
+            systemctl daemon-reload >/dev/null 2>&1 || true
+        fi
+        ;;
+    purge)
+        if command -v deb-systemd-helper >/dev/null 2>&1; then
+            deb-systemd-helper purge tccd.service >/dev/null || true
+            deb-systemd-helper unmask tccd.service >/dev/null || true
+        fi
+        # État mutable uniquement (D2). Chemin littéral, aucune interpolation.
+        rm -rf /var/lib/tuxedo-rust-center
+        ;;
+    upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+        ;;
+esac
+
+exit 0

@@ -1,0 +1,9 @@
+{
+  "charging": {
+    "available": true,
+    "startThresholds": {
+      "first": 40,
+      "second": 50
+    }
+  }
+}

@@ -1,0 +1,31 @@
+[package]
+name = "tcc-daemon"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Daemon privilégié tccd de TuxedoRustCenter"
+
+[dependencies]
+anyhow.workspace = true
+async-trait.workspace = true
+chrono = { version = "0.4", default-features = false, features = ["clock", "std"] }
+futures-util = "0.3"
+serde.workspace = true
+serde_json.workspace = true
+tcc-authz = { path = "../tcc-authz" }
+tcc-core = { path = "../tcc-core" }
+tcc-hw = { path = "../tcc-hw" }
+tcc-ipc = { path = "../tcc-ipc" }
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+zbus.workspace = true
+
+[features]
+default = []
+# Overrides de développement (D7) : jamais dans les paquets release.
+dev-overrides = ["tcc-core/dev-overrides", "tcc-hw/dev-overrides"]
+
+[dev-dependencies]
+tempfile.workspace = true

@@ -1,0 +1,34 @@
+[
+  {
+    "id": "__office__",
+    "name": "Office",
+    "description": "",
+    "display": {
+      "brightness": 70,
+      "useBrightness": true,
+      "refreshRate": 120,
+      "useRefRate": true,
+      "xResolution": -1,
+      "yResolution": -1,
+      "useResolution": false
+    },
+    "cpu": {},
+    "webcam": {},
+    "fan": {},
+    "odmProfile": {},
+    "odmPowerLimits": {},
+    "nvidiaPowerCTRLProfile": {}
+  },
+  {
+    "id": "__office__",
+    "name": "Office bis",
+    "description": "",
+    "display": {},
+    "cpu": {},
+    "webcam": {},
+    "fan": {},
+    "odmProfile": {},
+    "odmPowerLimits": {},
+    "nvidiaPowerCTRLProfile": {}
+  }
+]

@@ -1,0 +1,9 @@
+{
+  "contractVersion": 1,
+  "revision": 12,
+  "ppdProfile": "balanced",
+  "powerSource": "battery",
+  "manualOverride": false,
+  "activeProfile": {
+    "id": "__office__",
+    "name": "Office

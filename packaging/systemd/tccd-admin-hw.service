@@ -1,0 +1,114 @@
+[Unit]
+# PHASE 2 (AD-12 option B2) : limites matérielles à la demande
+# (TDP/ODM/cTGP). Le binaire `tccd-admin-hw` est livré, mais le service n'est
+# pas encore validé fonctionnellement sur bus système réel ni sur matériel, et
+# il n'est PAS installé par défaut.
+#
+# Installation conditionnelle : TCC_WITH_ADMIN_HW=1 (binaire requis).
+# `TCC_WITH_ADMIN=1` seul n'installe PAS cette unité (phase 1 séparée).
+# Voir docs/security/ADMIN_PHASE2_DESIGN.md §4.4, docs/packaging/SECURITY.md
+# et packaging/README.md.
+#
+# LUKS est HORS PÉRIMÈTRE (décision utilisateur) : aucune méthode, aucune
+# action polkit, aucun secret dans ce service.
+Description=TuxedoRustCenter on-demand hardware limits (TDP, ODM, cTGP)
+Documentation=file:/usr/share/doc/tuxedo-rust-center/SECURITY.md
+After=dbus.service systemd-modules-load.service modprobe@tuxedo_io.service
+# /dev/tuxedo_io doit exister pour que DeviceAllow soit résolu. L'échec du
+# chargement (module intégré, matériel absent) n'empêche pas l'activation :
+# la méthode renvoie NotSupported (design §4.4/§4.6). Ne JAMAIS ajouter
+# ConditionPathExists= ici : l'activation D-Bus échouerait sans erreur
+# applicative.
+Wants=modprobe@tuxedo_io.service
+StartLimitIntervalSec=60
+StartLimitBurst=20
+
+[Service]
+Type=dbus
+BusName=com.tuxedocomputers.tccd.Admin.Hw
+ExecStart=/usr/libexec/tuxedo-rust-center/tccd-admin-hw
+# Une action échoue et se termine ; l'activation suivante relance un
+# processus neuf, sans état. Pas de respawn automatique.
+Restart=no
+TimeoutStartSec=10
+TimeoutStopSec=10
+# Un appel inclut le dialogue polkit (120 s) ; marge au-delà.
+RuntimeMaxSec=5min
+KillMode=control-group
+
+# Aucune écriture fichier : UMask restrictif par défaut (aucun état).
+UMask=0077
+User=root
+Group=root
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+# Phase 2 : accès à /dev/tuxedo_io uniquement.
+PrivateDevices=no
+DevicePolicy=closed
+DeviceAllow=/dev/tuxedo_io rw
+ProtectProc=invisible
+ProcSubset=pid
+# Nécessaire aux écritures /sys (platform_profile, ctgp_offset).
+# Décision bloquante : ne pas passer à yes (casserait ODM/cTGP).
+ProtectKernelTunables=no
+# Compensation : tout le reste du noyau reste en lecture seule.
+# /proc/sys n'est VOLONTAIREMENT pas listé : ProcSubset=pid le masque
+# entièrement (plus fort qu'un montage read-only). Un ReadOnlyPaths=/proc/sys
+# ferait échouer le namespace (status=226/NAMESPACE, cible absente).
+# Ne pas le rajouter.
+ReadOnlyPaths=/sys/kernel /sys/module
+ReadOnlyPaths=/sys/devices/system/cpu
+# Préfixe "-" : ces classes peuvent être absentes selon le matériel (desktop
+# sans rétroéclairage/LED, noyau sans zone thermique). Une absence est
+# ignorée ; si le chemin existe, il est bien remonté en lecture seule. Sans
+# "-", systemd refuserait de démarrer le service.
+ReadOnlyPaths=-/sys/class/leds -/sys/class/backlight
+ReadOnlyPaths=-/sys/class/power_supply -/sys/class/hwmon -/sys/class/thermal -/sys/class/drm
+# D2 : Admin.Hw ne persiste RIEN. Il lit uniquement
+# Settings.ppd_override (SetOdmProfileOverride) ; ces chemins sont
+# explicitement en lecture seule. Aucun ReadWritePaths= (design §4.4 et
+# tableau §4.3 : « Hw aucun ») : une compromission du service ne peut pas
+# altérer les profils/réglages.
+ReadOnlyPaths=/etc/tuxedo-rust-center /var/lib/tuxedo-rust-center
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+KeyringMode=private
+RemoveIPC=yes
+RestrictAddressFamilies=AF_UNIX
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+# ioctl est couvert par @system-service (systemd-analyze syscall-filter) ;
+# reste à confirmer par strace sur matériel réel (design §4.6).
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+SecureBits=noroot-locked
+LimitCORE=0
+# AH-01 : même avec le garde 64 Kio du runtime, zbus 5 peut encore recevoir
+# une trame proche de 128 Mio avant de la rejeter. 256M évite que l'OOM tue
+# le service avant le rejet applicatif (déni de service local, aucune
+# écriture). Ce n'est PAS un budget de fonctionnement : le RSS réel visé
+# reste < 30 Mo. Le garde 64 Kio reste la barrière principale, pas cette
+# limite.
+MemoryMax=256M
+# Runtime borné : 2 workers async + thread principal. 16 laisse de la marge
+# sans dépendre du nombre de cœurs.
+TasksMax=16
+
+# Aucune capacité : root possède les attributs sysfs et /dev/tuxedo_io
+# (hypothèse à mesurer sur Clevo ET Uniwill, design §4.6). Toute capacité
+# ajoutée doit être justifiée, mesurée et relue par `security`.
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+# Pas de [Install] : activation D-Bus à la demande uniquement.
+# Pas de StateDirectory/ConfigurationDirectory : sans état persistant.

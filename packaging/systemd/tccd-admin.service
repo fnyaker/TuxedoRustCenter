@@ -1,0 +1,81 @@
+[Unit]
+# PHASE 1 UNIQUEMENT : persistance des profils/réglages + ReloadConfig.
+# Le binaire existe, mais le service n'est pas validé fonctionnellement et
+# n'est PAS installé par défaut.
+# Installation conditionnelle : TCC_WITH_ADMIN=1 (binaire requis).
+# Voir docs/packaging/SECURITY.md §6 et packaging/README.md.
+#
+# PHASE 2 (TDP/ODM/cTGP/PRIME) : delta séparé, à revoir par security.
+#   PrivateDevices=no, ProtectKernelTunables=no,
+#   DevicePolicy=closed + DeviceAllow=/dev/tuxedo_io rw,
+#   capacités mesurées, SystemCallFilter à valider.
+# PHASE 3 : Tomte/WebFAI dans un service plus restreint.
+# LUKS est HORS PÉRIMÈTRE (décision utilisateur) : aucun service, aucune
+# action polkit, aucune méthode, aucun secret.
+Description=TuxedoRustCenter on-demand administrative actions (config persistence, phase 1)
+Documentation=file:/usr/share/doc/tuxedo-rust-center/SECURITY.md
+After=dbus.service
+# Activation D-Bus uniquement. Jamais au boot.
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=dbus
+BusName=com.tuxedocomputers.tccd.Admin
+ExecStart=/usr/libexec/tuxedo-rust-center/tccd-admin
+# Une action échoue et se termine ; l'activation suivante relance un
+# processus neuf, sans état. Pas de respawn automatique.
+Restart=no
+TimeoutStartSec=10
+TimeoutStopSec=10
+# Garde-fou si la sortie après inactivité (30 s côté binaire) est cassée.
+RuntimeMaxSec=5min
+
+UMask=0077
+User=root
+Group=root
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ReadWritePaths=/var/lib/tuxedo-rust-center
+ProtectHome=yes
+PrivateTmp=yes
+# Phase 1 : aucun périphérique n'est nécessaire (pas de PRIME/TDP).
+PrivateDevices=yes
+DevicePolicy=closed
+ProtectProc=invisible
+ProcSubset=pid
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+KeyringMode=private
+RemoveIPC=yes
+RestrictAddressFamilies=AF_UNIX
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+# Phase 1 : écritures de fichiers + D-Bus. À valider avec le binaire réel ;
+# toute extension de syscalls doit être justifiée et testée.
+SystemCallFilter=@system-service
+SystemCallErrorNumber=EPERM
+SecureBits=noroot-locked
+LimitCORE=0
+MemoryMax=192M
+# Runtime borné dans main.rs : 2 workers async + au plus 4 threads bloquants,
+# soit 7 threads avec le thread principal. Ne dépend jamais du nombre de cœurs ;
+# 16 laisse de la marge sur une machine à 16+ cœurs.
+TasksMax=16
+
+# Phase 1 : aucune capacité. PRIME/TDP vivent en phase 2 séparée ; LUKS est
+# hors périmètre.
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+# Pas de [Install] : activation D-Bus à la demande uniquement.
+# Pas de StateDirectory/ConfigurationDirectory (D1 : sans état).

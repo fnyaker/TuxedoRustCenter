@@ -1,0 +1,37 @@
+[package]
+name = "tcc-admin"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Actions administratives à la demande de TuxedoRustCenter (phase 1)"
+
+[lib]
+name = "tcc_admin"
+path = "src/lib.rs"
+
+[[bin]]
+name = "tccd-admin"
+path = "src/main.rs"
+
+[[bin]]
+name = "tccd-admin-hw"
+path = "src/bin/tccd-admin-hw.rs"
+
+[dependencies]
+anyhow.workspace = true
+async-trait.workspace = true
+libc.workspace = true
+serde_json.workspace = true
+tcc-authz = { path = "../tcc-authz" }
+tcc-core = { path = "../tcc-core" }
+tcc-hw = { path = "../tcc-hw", default-features = false }
+tcc-ipc = { path = "../tcc-ipc" }
+thiserror.workspace = true
+tokio.workspace = true
+tracing.workspace = true
+tracing-subscriber.workspace = true
+zbus.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

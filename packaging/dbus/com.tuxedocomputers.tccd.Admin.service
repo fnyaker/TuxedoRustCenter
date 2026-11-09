@@ -1,0 +1,14 @@
+[D-BUS Service]
+# ATTENTION : ce fichier n'est PAS installé par défaut. Un squelette
+# /usr/libexec/tuxedo-rust-center/tccd-admin existe, mais le service n'est pas
+# fonctionnel (polkit/Control1/idle-timeout à implémenter). Une activation
+# D-Bus vers un service incomplet échoue à chaque appel.
+# Installation explicite : TCC_WITH_ADMIN=1, et seulement après validation.
+# Voir packaging/README.md §tccd-admin et scripts/release/install-tree.sh.
+#
+# Activation à la demande de tccd-admin (D1). Le nom est provisoire et doit
+# être confirmé avec tcc-ipc/security avant publication.
+Name=com.tuxedocomputers.tccd.Admin
+Exec=/usr/libexec/tuxedo-rust-center/tccd-admin
+User=root
+SystemdService=tccd-admin.service

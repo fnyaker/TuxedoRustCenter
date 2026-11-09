@@ -1,0 +1,25 @@
+{
+  "fahrenheit": false,
+  "stateMap": {
+    "power_ac": "__office__",
+    "power_bat": "__profile_silent__"
+  },
+  "shutdownTime": "22:30",
+  "cpuSettingsEnabled": true,
+  "fanControlEnabled": true,
+  "keyboardBacklightControlEnabled": true,
+  "ycbcr420Workaround": [
+    { "card0-DP-1": true },
+    { "card1-HDMI-A-1": false }
+  ],
+  "chargingProfile": "high",
+  "chargingPriority": "charging",
+  "keyboardStates": [],
+  "keyboardBacklightStates": [
+    { "mode": 0, "brightness": 200, "red": 227, "green": 0, "blue": 22 },
+    { "mode": 1, "brightness": 120, "red": 255, "green": 255, "blue": 255 }
+  ],
+  "lightbarStates": { "brightness": 50, "red": 227, "green": 0, "blue": 22 },
+  "tccVersion": "2.0.0",
+  "futureSettings": { "telemetry": false }
+}

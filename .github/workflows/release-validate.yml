@@ -1,0 +1,103 @@
+name: Release validation
+
+on:
+  pull_request:
+    paths:
+      - "packaging/**"
+      - "distro/**"
+      - "scripts/release/**"
+      - "docs/packaging/**"
+      - ".github/workflows/release*.yml"
+  push:
+    branches: ["main", "master"]
+    paths:
+      - "packaging/**"
+      - "distro/**"
+      - "scripts/release/**"
+      - "docs/packaging/**"
+      - ".github/workflows/release*.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-validate-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  packaging:
+    name: Packaging statique
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Outils de validation
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            systemd systemd-udev udev dbus dbus-daemon dbus-tools desktop-file-utils appstream libxml2-utils shellcheck
+
+      - name: Shellcheck des scripts de release
+        run: shellcheck -x -S warning scripts/release/*.sh distro/deb/postinst distro/deb/prerm distro/deb/postrm distro/arch/tuxedo-rust-center.install
+
+      - name: Validation packaging (strict)
+        env:
+          TCC_VALIDATE_STRICT: "1"
+        run: scripts/release/validate.sh --repo
+
+      - name: Durcissement systemd
+        run: |
+          systemd-analyze verify packaging/systemd/tccd.service \
+            packaging/systemd/tccd-user.service packaging/systemd/tccd-admin.service \
+            packaging/systemd/tccd-admin-hw.service \
+            || true   # binaires absents avant installation : filtré par validate.sh
+          systemd-analyze security --offline=true packaging/systemd/tccd.service
+
+      - name: Durcissement Admin.Hw (phase 2 préparée, non installée)
+        run: |
+          set -e
+          hw_score=$(systemd-analyze security --offline=true packaging/systemd/tccd-admin-hw.service \
+            | sed -n 's/.*: \([0-9][0-9.]*\).*/\1/p' | tail -1)
+          echo "tccd-admin-hw.service exposure: $hw_score"
+          # Cible design §4.4 : ≤ 3.0 (phase 1 : 1.6).
+          awk -v s="$hw_score" 'BEGIN { exit !(s <= 3.0) }'
+          # Admin.Hw ne persiste rien et ne reçoit aucun périphérique en plus.
+          ! grep -qE '^ReadWritePaths=' packaging/systemd/tccd-admin-hw.service
+          ! grep -qE '^PrivateDevices=yes' packaging/systemd/tccd-admin-hw.service
+          ! grep -qE '^ProtectKernelTunables=yes' packaging/systemd/tccd-admin-hw.service
+          grep -qxF 'DeviceAllow=/dev/tuxedo_io rw' packaging/systemd/tccd-admin-hw.service
+          test ! -e packaging/systemd/tccd-sleep.service
+
+      - name: Interdits de sécurité
+        run: |
+          set -e
+          ! grep -rnE 'policykit\.exec\.(path|argv1|allow_gui)' packaging/polkit/
+          ! grep -rn 'RUN+=' packaging/udev/
+          ! grep -rn 'IMPORT{program}' packaging/udev/
+          ! grep -rnE '(ExecStart|ExecStop|Exec)=/opt/' packaging/ distro/
+          ! grep -rn 'tccd-sleep\.service"' scripts/release/install-tree.sh
+          test ! -e packaging/systemd/tccd-sleep.service
+          test -f packaging/systemd/tccd-sleep.service.example
+          # Admin.Hw (phase 2) : pas d'installation par --with-admin.
+          ! awk '/^if \[ "\$WITH_ADMIN" = "1" \]; then$/{f=1} f{print} f&&/^fi$/{f=0}' \
+              scripts/release/install-tree.sh | grep -q 'tccd-admin-hw'
+          grep -q '^%bcond_with admin_hw' distro/rpm/tuxedo-rust-center.spec
+          grep -q '^_with_admin_hw=0' distro/arch/PKGBUILD
+
+  dbus-policy:
+    name: Politique D-Bus (bus isolé)
+    runs-on: ubuntu-latest
+    container: debian:trixie
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Outils D-Bus
+        run: |
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            dbus dbus-tests dbus-bin passwd util-linux
+
+      - name: Test fonctionnel allow/deny
+        run: scripts/release/dbus-policy-test.sh packaging/dbus/com.tuxedocomputers.tccd.conf

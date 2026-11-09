@@ -1,0 +1,24 @@
+tuxedo-rust-center (0.1.0-1) unstable; urgency=medium
+
+  * Premier paquet installable (jalon 1/2) : binaires tccd, tccd-user,
+    tuxedo-rust-center et tcc-cli, units systemd système et utilisateur,
+    politique D-Bus, actions polkit, règle udev sans RUN+=, tmpfiles,
+    desktop entry, icônes hicolor et métadonnées AppStream.
+  * Installation FHS stricte : aucun fichier dans /opt, aucun runtime
+    Node.js/Python, aucun setuid.
+  * État mutable dans /var/lib/tuxedo-rust-center, configuration
+    administrateur dans /etc/tuxedo-rust-center en lecture seule pour le
+    daemon (D2).
+  * Conflit déclaré avec le paquet tuxedo-control-center (même unité
+    tccd.service et même nom D-Bus com.tuxedocomputers.tccd).
+  * tccd-admin non installé : le squelette existe, mais le service n'est pas
+    fonctionnel (D1). Packaging phase 1 préparé (Admin1/Control1, polkit)
+    derrière TCC_WITH_ADMIN=1 ; par défaut, rien n'est installé.
+  * Dépendances QML complétées : Qt.labs.platform (tray), QtQuick.Dialogs
+    (FileDialog), QtQuick.Effects, QtQml.Models et Qt6Widgets/QApplication.
+  * Phase 2 (AD-12 B2) préparée : tccd-admin-hw (TDP/ODM/cTGP), unité durcie,
+    activation D-Bus et policy AdminHw1 membre par membre. Non installé par
+    défaut ; TCC_WITH_ADMIN_HW=1 (indépendant de TCC_WITH_ADMIN). Binaire
+    tccd-admin-hw livré ; validation fonctionnelle/matérielle en cours.
+
+ -- TuxedoRustCenter contributors <maintainers@tuxedorustcenter.invalid>  Fri, 06 Nov 2026 00:00:00 +0000

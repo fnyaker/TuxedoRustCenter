@@ -1,0 +1,32 @@
+TuxedoRustCenter — configuration administrateur
+================================================
+
+Ce répertoire contient la configuration administrateur, en LECTURE SEULE
+pour le daemon tccd (décision D2). Il est vide par défaut : le paquet
+n'installe que ce fichier.
+
+Où se trouve quoi
+-----------------
+  /etc/tuxedo-rust-center/       surcharges administrateur, lecture seule pour
+                                 le daemon (ce répertoire)
+  /var/lib/tuxedo-rust-center/   état mutable : settings.json, profiles.json,
+                                 fantables.json, webcam.json (root:root 0644)
+  /run/tuxedo-rust-center/       runtime éphémère, recréé à chaque démarrage
+
+Ne pas éditer /var/lib/tuxedo-rust-center/*.json à la main pendant que tccd
+tourne : le daemon écrit ces fichiers de façon atomique et pourrait écraser
+vos modifications. Utiliser la GUI ou `tcc-cli`.
+
+Migration depuis TUXEDO Control Center
+--------------------------------------
+Au premier démarrage, tccd lit /etc/tcc/{settings,profiles,fantables,webcam},
+valide et convertit les données, puis écrit l'état dans /var/lib. L'ancien
+répertoire n'est jamais supprimé ni modifié, mais aucune copie .bak
+automatique n'est créée (REVIEW_JALON1 R-18) : sauvegardez /etc/tcc avant la
+première migration.
+Voir /usr/share/doc/tuxedo-rust-center/MIGRATION.md.
+
+Sécurité
+--------
+Ne jamais rendre ce répertoire inscriptible par un utilisateur non privilégié,
+ni y placer un lien symbolique vers un fichier contrôlé par l'utilisateur.

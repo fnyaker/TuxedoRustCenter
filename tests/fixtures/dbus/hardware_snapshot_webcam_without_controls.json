@@ -1,0 +1,24 @@
+{
+  "webcam": {
+    "switchAvailable": false,
+    "controlsWritable": false,
+    "enabled": null,
+    "controlsSupported": false,
+    "controlsTruncated": false,
+    "devices": [
+      {
+        "name": "Integrated Camera",
+        "devicePath": "/dev/video0",
+        "deviceName": "Integrated Camera",
+        "index": 0,
+        "metadata": false,
+        "identity": null,
+        "busInfo": null,
+        "controls": [],
+        "controlsError": "EACCES"
+      }
+    ],
+    "applied": null,
+    "errors": ["contrôles illisibles"]
+  }
+}

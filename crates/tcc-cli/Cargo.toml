@@ -1,0 +1,15 @@
+[package]
+name = "tcc-cli"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Outils de diagnostic TuxedoRustCenter"
+
+[dependencies]
+anyhow.workspace = true
+serde_json.workspace = true
+tcc-core = { path = "../tcc-core" }
+tcc-ipc = { path = "../tcc-ipc" }
+tokio.workspace = true
+zbus.workspace = true

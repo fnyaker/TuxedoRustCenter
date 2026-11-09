@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Métadonnées AppStream de TuxedoRustCenter.
+
+  Le fichier de métadonnées lui-même est publié sous CC0-1.0 (licence exigée
+  par AppStream pour les métadonnées) ; le logiciel reste GPL-3.0-or-later.
+-->
+<component type="desktop-application">
+  <id>com.tuxedocomputers.TuxedoRustCenter</id>
+
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+
+  <name>TUXEDO Control Center</name>
+  <summary>Control performance, cooling, display and charging on TUXEDO laptops</summary>
+  <summary xml:lang="fr">Contrôler les performances, le refroidissement, l'affichage et la charge des ordinateurs portables TUXEDO</summary>
+  <summary xml:lang="de">Leistung, Kühlung, Anzeige und Laden von TUXEDO-Notebooks steuern</summary>
+
+  <developer id="com.tuxedocomputers">
+    <name>TuxedoRustCenter contributors</name>
+  </developer>
+
+  <description>
+    <p>
+      TuxedoRustCenter is a native Qt 6 rewrite of the TUXEDO Control Center.
+      It provides hardware profiles for CPU limits, fan curves, keyboard
+      lighting, webcam presets, charging thresholds and the internal display
+      refresh rate, with automatic profile switching based on
+      power-profiles-daemon and the AC/battery state.
+    </p>
+    <p xml:lang="fr">
+      TuxedoRustCenter est une réécriture native Qt 6 du TUXEDO Control Center.
+      Il fournit des profils matériels pour les limites CPU, les courbes de
+      ventilation, l'éclairage du clavier, les préréglages de webcam, les
+      seuils de charge et le taux de rafraîchissement de l'écran interne, avec
+      une bascule automatique pilotée par power-profiles-daemon et l'état
+      secteur/batterie.
+    </p>
+    <p xml:lang="de">
+      TuxedoRustCenter ist eine native Qt-6-Neuimplementierung des TUXEDO
+      Control Center. Es bietet Hardwareprofile für CPU-Limits,
+      Lüfterkurven, Tastaturbeleuchtung, Webcam-Voreinstellungen,
+      Ladeschwellen und die Bildwiederholrate des internen Displays, mit
+      automatischem Profilwechsel über power-profiles-daemon und den
+      Netz-/Akkustatus.
+    </p>
+    <ul>
+      <li>System dashboard: temperatures, power draw, clock frequencies, fan speeds</li>
+      <li>Predefined and custom profiles, import/export</li>
+      <li>CPU limits, energy performance preference, turbo and online cores</li>
+      <li>Fan curves, charging thresholds, keyboard and lightbar lighting</li>
+      <li>Internal display refresh rate per profile (X11 and Wayland)</li>
+      <li>Webcam kill switch and UVC presets</li>
+    </ul>
+  </description>
+
+  <launchable type="desktop-id">tuxedo-rust-center.desktop</launchable>
+
+  <url type="homepage">https://github.com/fnyaker/TuxedoRustCenter</url>
+  <url type="bugtracker">https://github.com/fnyaker/TuxedoRustCenter/issues</url>
+
+  <categories>
+    <category>Settings</category>
+    <category>System</category>
+  </categories>
+
+  <keywords>
+    <keyword>fan control</keyword>
+    <keyword>temperature</keyword>
+    <keyword>profile</keyword>
+    <keyword>charging</keyword>
+    <keyword>keyboard backlight</keyword>
+    <keyword xml:lang="de">Lüftersteuerung</keyword>
+    <keyword xml:lang="de">Temperatur</keyword>
+    <keyword xml:lang="de">Profil</keyword>
+    <keyword xml:lang="fr">ventilateur</keyword>
+    <keyword xml:lang="fr">température</keyword>
+    <keyword xml:lang="fr">profil</keyword>
+  </keywords>
+
+  <content_rating type="oars-1.1"/>
+
+  <releases>
+    <release version="0.1.0" date="2026-11-06" type="development">
+      <description>
+        <p>
+          Premier jalon : modèles, profils, migration depuis TCC, daemon
+          D-Bus, agent de session et shell Qt 6. Les fonctions matérielles
+          avancées (ventilateurs, charge, éclairage, webcam) arrivent aux
+          jalons suivants.
+        </p>
+      </description>
+    </release>
+  </releases>
+</component>

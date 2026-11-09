@@ -1,0 +1,118 @@
+{
+  "device": {
+    "available": true,
+    "vendor": "TUXEDO Computers GmbH",
+    "productName": "TUXEDO Pulse 14 Gen4",
+    "boardName": "PULSE1404",
+    "boardVendor": "TUXEDO",
+    "chassisVendor": "TUXEDO",
+    "sku": "PULSE1404",
+    "isTuxedo": true,
+    "model": "PULSE1404",
+    "kernelRelease": "6.12.0-tuxedo",
+    "architecture": "x86_64",
+    "tuxedoDriverVersion": "0.3.9",
+    "errors": []
+  },
+  "cpu": {
+    "totalCores": 16,
+    "onlineCores": 16,
+    "availableGovernors": ["performance", "powersave"],
+    "availableEpp": ["default", "performance", "balance_performance", "power"],
+    "hasCpuControl": true,
+    "writable": true,
+    "scalingDriver": "amd-pstate-epp",
+    "errors": []
+  },
+  "display": {
+    "available": true,
+    "hasInternalDisplay": true,
+    "internalConnector": "eDP-1",
+    "connected": true,
+    "source": "drm",
+    "errors": []
+  },
+  "capabilities": {
+    "hasBattery": true,
+    "hasAc": true,
+    "hasIgpu": true,
+    "hasDedicatedGpu": false,
+    "errors": []
+  },
+  "sensors": {
+    "enabled": true,
+    "available": true,
+    "cpu": {
+      "temperatureC": 48.0,
+      "frequencyMhz": 2400,
+      "powerW": 18.0
+    },
+    "igpu": {
+      "vendor": "amd",
+      "role": "integrated",
+      "name": "AMD Radeon 780M",
+      "card": "card0",
+      "temperatureC": 47.0,
+      "frequencyMhz": 800,
+      "maxFrequencyMhz": 2700,
+      "powerW": 3.0
+    },
+    "dgpu": null,
+    "gpus": [
+      {
+        "vendor": "amd",
+        "role": "integrated",
+        "name": "AMD Radeon 780M",
+        "card": "card0",
+        "temperatureC": 47.0,
+        "frequencyMhz": 800,
+        "maxFrequencyMhz": 2700,
+        "powerW": 3.0
+      }
+    ]
+  },
+  "nvidia": {
+    "available": false,
+    "writable": false,
+    "attributeAvailable": false,
+    "nvidiaSmiAvailable": false,
+    "ctgpOffset": null,
+    "defaultPowerLimit": null,
+    "maxPowerLimit": null,
+    "appliedOffset": null,
+    "errors": []
+  },
+  "prime": {
+    "available": false,
+    "writable": false,
+    "platformSupported": false,
+    "supported": false,
+    "tuxPrime": false,
+    "mode": "igpu",
+    "internalDisplayOnNvidia": null,
+    "requiresOffloading": false,
+    "primeSelect": null
+  },
+  "webcam": {
+    "switchAvailable": false,
+    "controlsWritable": false,
+    "enabled": null,
+    "controlsSupported": false,
+    "controlsTruncated": false,
+    "devices": [],
+    "applied": null,
+    "errors": []
+  },
+  "fnLock": {
+    "supported": false,
+    "enabled": null,
+    "writable": false
+  },
+  "ycbcr": {
+    "available": false,
+    "ports": [],
+    "pendingModeReapply": false,
+    "applied": true,
+    "errors": []
+  }
+}

@@ -1,0 +1,21 @@
+[package]
+name = "tcc-hw"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Couche matérielle Linux : sysfs, hwmon, ioctl tuxedo-io, DMI, affichage"
+
+[features]
+default = []
+# Overrides de développement (TCC_SYSFS_ROOT). À ne JAMAIS activer dans un
+# paquet de release : voir docs/security/DECISIONS.md D7.
+dev-overrides = []
+
+[dependencies]
+libc.workspace = true
+thiserror.workspace = true
+tracing.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

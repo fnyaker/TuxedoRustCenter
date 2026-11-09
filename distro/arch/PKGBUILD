@@ -1,0 +1,70 @@
+# Maintainer: TuxedoRustCenter contributors <maintainers@tuxedorustcenter.invalid>
+#
+# PKGBUILD Arch Linux pour TuxedoRustCenter.
+#
+# Le dépôt n'a pas d'URL de release publique : ce PKGBUILD utilise l'archive
+# source reproductible produite par scripts/release/make-source-tarball.sh.
+# `sha256sums=('SKIP')` est remplacé par la somme réelle dans
+# scripts/release/make-arch.sh (et doit l'être dans un PKGBUILD publié).
+#
+# Aucun fichier dans /opt. Aucun runtime Node/Python. Aucun setuid.
+
+pkgname=tuxedo-rust-center
+pkgver=0.1.0
+pkgrel=1
+# tccd-admin : préparé, NON installé par défaut. Passer à 1 uniquement quand
+# le binaire tcc-admin/tccd-admin est fonctionnel (phase 1).
+_with_admin=0
+# tccd-admin-hw (phase 2, AD-12 B2 : TDP/ODM/cTGP) : préparé, NON installé
+# par défaut. Passer à 1 uniquement quand tccd-admin-hw existe et est validé.
+# Indépendant de _with_admin : _with_admin=1 ne l'installe PAS.
+_with_admin_hw=0
+pkgdesc="Native Qt 6 TUXEDO Control Center rewrite"
+arch=('x86_64' 'aarch64')
+url="https://github.com/fnyaker/TuxedoRustCenter"
+license=('GPL-3.0-or-later')
+depends=('glibc' 'gcc-libs' 'qt6-base' 'qt6-declarative' 'qt6-svg'
+         'hicolor-icon-theme' 'dbus' 'systemd')
+makedepends=('cargo' 'rust')
+checkdepends=('desktop-file-utils' 'appstream' 'libxml2' 'systemd')
+optdepends=(
+    'tuxedo-drivers: TUXEDO kernel drivers (fans, TDP, charging, lighting)'
+    'power-profiles-daemon: automatic profile switching from PPD'
+    'upower: AC/battery events'
+    'polkit: authorization for sensitive hardware actions'
+    'tuxedo-tomte: TUXEDO system tool (via tccd-admin, à venir)'
+    'tuxedo-systeminfos: support diagnostics'
+    'kscreen: KDE display backend (kscreen-doctor)'
+    'nvidia-utils: NVIDIA cTGP support'
+    'switcheroo-control: PRIME/GPU detection'
+)
+# Cohabitation impossible avec TCC original : unité tccd.service et nom D-Bus
+# com.tuxedocomputers.tccd partagés.
+conflicts=('tuxedo-control-center' 'tuxedofancontrol')
+replaces=('tuxedo-control-center' 'tuxedofancontrol')
+provides=('tuxedo-control-center')
+backup=('etc/tuxedo-rust-center/README')
+options=('!debug' '!strip' '!lto')
+install="$pkgname.install"
+
+source=("$pkgname-$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+    cd "$srcdir/$pkgname-$pkgver"
+    export SOURCE_DATE_EPOCH="${SOURCE_DATE_EPOCH:-1793923200}"
+    cargo build --release --locked
+}
+
+check() {
+    cd "$srcdir/$pkgname-$pkgver"
+    TCC_VALIDATE_STRICT=0 scripts/release/validate.sh --repo
+}
+
+package() {
+    cd "$srcdir/$pkgname-$pkgver"
+    TCC_WITH_ADMIN="$_with_admin" \
+    TCC_WITH_ADMIN_HW="$_with_admin_hw" \
+    TCC_TARGET_DIR="$srcdir/$pkgname-$pkgver/target" \
+        scripts/release/install-tree.sh "$pkgdir"
+}

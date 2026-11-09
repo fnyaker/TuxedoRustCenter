@@ -1,0 +1,7 @@
+{
+  "id": "../escape",
+  "name": "Office",
+  "description": "Bureau",
+  "isPreset": true,
+  "source": "stateMatrix"
+}

@@ -1,0 +1,62 @@
+{
+  "available": true,
+  "session": {
+    "type": "wayland",
+    "desktop": "Hyprland",
+    "waylandDisplay": "wayland-1",
+    "display": null
+  },
+  "backend": {
+    "kind": "hyprland",
+    "name": "hyprland",
+    "available": true
+  },
+  "internalOutput": {
+    "name": "eDP-1",
+    "connected": true,
+    "enabled": true,
+    "hasInternalDisplay": true,
+    "currentMode": {
+      "width": 2560,
+      "height": 1600,
+      "refreshHz": 60.0,
+      "preferred": false,
+      "current": true
+    },
+    "modes": [
+      {
+        "width": 2560,
+        "height": 1600,
+        "refreshHz": 60.0,
+        "preferred": false,
+        "current": true
+      },
+      {
+        "width": 2560,
+        "height": 1600,
+        "refreshHz": 165.0,
+        "preferred": true,
+        "current": false
+      }
+    ]
+  },
+  "supported": true,
+  "dryRun": false,
+  "error": null,
+  "externalOutput": {
+    "name": "HDMI-A-1",
+    "connected": true,
+    "modes": [
+      { "width": 3840, "height": 2160, "refreshHz": 60.0 },
+      { "width": 1920, "height": 1080, "refreshHz": 120.0 }
+    ]
+  },
+  "externalOutputs": [
+    {
+      "name": "DP-1",
+      "modes": [
+        { "width": 3440, "height": 1440, "refreshHz": 100.0 }
+      ]
+    }
+  ]
+}

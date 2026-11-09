@@ -1,0 +1,123 @@
+[
+  {
+    "id": "__office__",
+    "name": "Office",
+    "description": "Bureau",
+    "display": {
+      "brightness": 70,
+      "useBrightness": true,
+      "refreshRate": 120,
+      "useRefRate": true,
+      "xResolution": -1,
+      "yResolution": -1,
+      "useResolution": false
+    },
+    "cpu": {
+      "onlineCores": 8,
+      "useMaxPerfGov": false,
+      "scalingMinFrequency": 400000,
+      "scalingMaxFrequency": 4200000,
+      "governor": "powersave",
+      "energyPerformancePreference": "balance_performance",
+      "noTurbo": false
+    },
+    "webcam": { "status": true, "useStatus": true },
+    "fan": {
+      "useControl": true,
+      "fanProfile": "Balanced",
+      "minimumFanspeed": 0,
+      "maximumFanspeed": 100,
+      "offsetFanspeed": 0,
+      "customFanCurve": {
+        "tableCPU": [
+          { "temp": 30, "speed": 20 },
+          { "temp": 70, "speed": 70 }
+        ],
+        "tableGPU": []
+      }
+    },
+    "odmProfile": { "name": "balanced" },
+    "odmPowerLimits": { "tdpValues": [15, 25, 35] },
+    "nvidiaPowerCTRLProfile": { "cTGPOffset": 0 },
+    "x-extension": { "kept": true }
+  },
+  {
+    "id": "custom-gaming-0001",
+    "name": "Gaming",
+    "description": "Profil personnalisé avec écran haute fréquence",
+    "display": {
+      "brightness": 100,
+      "useBrightness": false,
+      "refreshRate": 165,
+      "useRefRate": true,
+      "xResolution": 2560,
+      "yResolution": 1600,
+      "useResolution": true
+    },
+    "cpu": {
+      "onlineCores": 8,
+      "useMaxPerfGov": true,
+      "scalingMinFrequency": 800000,
+      "scalingMaxFrequency": 4800000,
+      "governor": "performance",
+      "energyPerformancePreference": "performance",
+      "noTurbo": false
+    },
+    "webcam": { "status": true, "useStatus": false },
+    "fan": {
+      "useControl": true,
+      "fanProfile": "Custom",
+      "minimumFanspeed": 20,
+      "maximumFanspeed": 100,
+      "offsetFanspeed": 5,
+      "customFanCurve": {
+        "tableCPU": [
+          { "temp": 30, "speed": 20 },
+          { "temp": 70, "speed": 75 }
+        ],
+        "tableGPU": []
+      }
+    },
+    "odmProfile": { "name": "enthusiast" },
+    "odmPowerLimits": { "tdpValues": [25, 35, 45] },
+    "nvidiaPowerCTRLProfile": { "cTGPOffset": 15 }
+  },
+  {
+    "id": "__profile_silent__",
+    "name": "Quiet",
+    "description": "Profil silencieux",
+    "display": {
+      "brightness": 40,
+      "useBrightness": true,
+      "refreshRate": -1,
+      "useRefRate": false,
+      "xResolution": -1,
+      "yResolution": -1,
+      "useResolution": false
+    },
+    "cpu": {
+      "onlineCores": 4,
+      "useMaxPerfGov": false,
+      "scalingMinFrequency": 400000,
+      "scalingMaxFrequency": -1,
+      "governor": "powersave",
+      "energyPerformancePreference": "power",
+      "noTurbo": true
+    },
+    "webcam": { "status": true, "useStatus": true },
+    "fan": {
+      "useControl": true,
+      "fanProfile": "Silent",
+      "minimumFanspeed": 0,
+      "maximumFanspeed": 60,
+      "offsetFanspeed": 0,
+      "customFanCurve": {
+        "tableCPU": [{ "temp": 30, "speed": 0 }],
+        "tableGPU": []
+      }
+    },
+    "odmProfile": { "name": "quiet" },
+    "odmPowerLimits": { "tdpValues": [10, 15, 25] },
+    "nvidiaPowerCTRLProfile": { "cTGPOffset": 0 }
+  }
+]

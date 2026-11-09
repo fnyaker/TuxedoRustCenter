@@ -1,0 +1,17 @@
+[D-BUS Service]
+# ATTENTION : ce fichier n'est PAS installé par défaut. Le binaire
+# /usr/libexec/tuxedo-rust-center/tccd-admin-hw est livré (phase 2, AD-12
+# option B2) mais le service n'est pas validé fonctionnellement sur bus
+# système réel ni sur matériel.
+#
+# Installation explicite : TCC_WITH_ADMIN_HW=1, et seulement après validation
+# matérielle (docs/security/ADMIN_PHASE2_DESIGN.md §9).
+# `TCC_WITH_ADMIN=1` seul n'installe PAS ce fichier.
+# Voir packaging/README.md §tccd-admin-hw et scripts/release/install-tree.sh.
+#
+# Activation à la demande de tccd-admin-hw (TDP/ODM/cTGP). Un seul
+# propriétaire possible : root (policy D-Bus).
+Name=com.tuxedocomputers.tccd.Admin.Hw
+Exec=/usr/libexec/tuxedo-rust-center/tccd-admin-hw
+User=root
+SystemdService=tccd-admin-hw.service

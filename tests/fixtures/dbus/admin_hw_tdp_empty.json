@@ -1,0 +1,20 @@
+{
+  "method": "SetTdpValues",
+  "arguments": {
+    "values": []
+  },
+  "expected": {
+    "accepted": true,
+    "readBack": [
+      100,
+      100,
+      120
+    ],
+    "descriptors": [
+      "pl1",
+      "pl2",
+      "pl4"
+    ],
+    "maxima": true
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "method": "SetTdpValues",
+  "arguments": {
+    "values": [35, 45, 65]
+  },
+  "expected": {
+    "accepted": true,
+    "readBack": [35, 45, 65],
+    "descriptors": ["pl1", "pl2", "pl4"]
+  }
+}

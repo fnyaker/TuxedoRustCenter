@@ -1,0 +1,25 @@
+{
+  "available": true,
+  "session": {
+    "type": "x11",
+    "desktop": "Xfce",
+    "waylandDisplay": null,
+    "display": ":0"
+  },
+  "backend": {
+    "kind": "x11",
+    "name": "x11",
+    "available": true
+  },
+  "internalOutput": {
+    "name": "",
+    "connected": false,
+    "enabled": false,
+    "hasInternalDisplay": false,
+    "currentMode": null,
+    "modes": []
+  },
+  "supported": false,
+  "dryRun": false,
+  "error": null
+}

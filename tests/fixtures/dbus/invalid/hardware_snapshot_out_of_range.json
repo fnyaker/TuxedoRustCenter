@@ -1,0 +1,75 @@
+{
+  "charging": {
+    "available": true,
+    "startThreshold": 150,
+    "endThreshold": 10,
+    "startThresholds": [0, 40, 150],
+    "endThresholds": [20, 80, 250],
+    "chargeType": "Bogus",
+    "thresholdsAvailable": true
+  },
+  "lighting": {
+    "available": true,
+    "keyboard": {
+      "available": true,
+      "zones": 255,
+      "maxBrightness": 4294967295
+    }
+  },
+  "odm": {
+    "available": true,
+    "tdpAvailable": true,
+    "tdp": [
+      { "descriptor": "pl1", "current": -5, "min": 100, "max": 10 }
+    ]
+  },
+  "nvidia": {
+    "available": true,
+    "ctgpOffset": 9999,
+    "defaultPowerLimit": -1.0,
+    "maxPowerLimit": 1000000.0
+  },
+  "webcam": {
+    "switchAvailable": true,
+    "controlsWritable": true,
+    "controlsSupported": true,
+    "controlsTruncated": false,
+    "devices": [
+      {
+        "name": "Out of range camera",
+        "devicePath": "/dev/video0",
+        "deviceName": "Out of range camera",
+        "index": 0,
+        "metadata": false,
+        "identity": null,
+        "busInfo": null,
+        "controls": [
+          {
+            "key": "brightness",
+            "name": "Brightness",
+            "kind": "integer",
+            "min": 500,
+            "max": 0,
+            "step": 0,
+            "default": 999,
+            "current": { "kind": "integer", "value": 10000 },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": false,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          }
+        ],
+        "controlsError": null
+      }
+    ],
+    "applied": true,
+    "errors": []
+  }
+}

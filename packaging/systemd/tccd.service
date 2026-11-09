@@ -1,0 +1,116 @@
+[Unit]
+Description=TuxedoRustCenter privileged hardware daemon
+Documentation=file:/usr/share/doc/tuxedo-rust-center/PLATFORM_DESIGN.md
+Documentation=file:/usr/share/doc/tuxedo-rust-center/DBUS_API.md
+After=dbus.service
+Wants=power-profiles-daemon.service
+# Ne pas ordonner tccd après power-profiles-daemon.service : PPD est lui-même
+# `After=multi-user.target`, alors que tccd est `WantedBy=multi-user.target`.
+# Un `After=PPD` crée un cycle d'ordonnancement et systemd supprime le job de
+# démarrage de tccd au boot. tccd démarre avant PPD et s'abonne à son signal
+# D-Bus ; PPD peut apparaître plus tard sans bloquer le daemon.
+# R-22 : /dev/tuxedo_io doit exister au démarrage pour que DeviceAllow soit
+# résolu. `modprobe@.service` est fourni par systemd ; l'échec du chargement
+# (module intégré, matériel absent) n'empêche pas tccd de démarrer en mode
+# dégradé. Cette dépendance N'A PAS été validée sur matériel réel : voir
+# docs/packaging/SECURITY.md §2.
+After=systemd-modules-load.service modprobe@tuxedo_io.service
+Wants=modprobe@tuxedo_io.service
+# Évite une boucle de redémarrage si le matériel ou D-Bus est indisponible.
+StartLimitIntervalSec=60
+StartLimitBurst=5
+
+[Service]
+Type=dbus
+BusName=com.tuxedocomputers.tccd
+ExecStart=/usr/libexec/tuxedo-rust-center/tccd
+Restart=on-failure
+RestartSec=1
+TimeoutStopSec=10
+
+# Répertoires gérés par systemd (FHS).
+# D2 : la configuration administrateur reste dans /etc, en LECTURE SEULE pour
+# le daemon. L'état mutable (profils/settings) vit dans /var/lib.
+StateDirectory=tuxedo-rust-center
+StateDirectoryMode=0755
+RuntimeDirectory=tuxedo-rust-center
+RuntimeDirectoryMode=0755
+ConfigurationDirectory=tuxedo-rust-center
+ConfigurationDirectoryMode=0755
+# Les fichiers publics (profils/settings) sont explicitement passés en 0644
+# par le ConfigStore (fchmod après création) ; l'umask restrictif protège les
+# fichiers temporaires et tout fichier non prévu.
+UMask=0077
+
+User=root
+Group=root
+
+# Ne JAMAIS transmettre TCC_SYSFS_ROOT ou TCC_CONFIG_DIR ici : ces overrides
+# de développement sont derrière la feature Cargo `dev-overrides`, absente des
+# paquets release, et refusés en root (docs/security/DECISIONS.md D7).
+# Aucun `EnvironmentFile=` : l'environnement du daemon est vide.
+
+# --- Durcissement -----------------------------------------------------------
+NoNewPrivileges=yes
+ProtectSystem=strict
+# ProtectSystem=strict rend /etc et /var/lib read-only ; seuls l'état mutable
+# et le runtime sont inscriptibles. Pas de ReadWritePaths=/etc (D2).
+ReadWritePaths=/var/lib/tuxedo-rust-center /run/tuxedo-rust-center
+ProtectHome=yes
+PrivateTmp=yes
+ProtectProc=invisible
+ProcSubset=pid
+
+# /dev/tuxedo_io est le seul nœud caractère nécessaire aujourd'hui. Un /dev
+# privé n'est pas utilisé car tous les noyaux ne le recréent pas avec
+# DeviceAllow ; à valider sur matériel réel (docs/linux/PLATFORM_DESIGN.md §8).
+# Tout nouveau périphérique (DRM, i2c, hwmon en /dev/...) doit être ajouté ici
+# explicitement et relu par `security`.
+PrivateDevices=no
+DevicePolicy=closed
+DeviceAllow=/dev/tuxedo_io rw
+# V-17 : énumération/lecture V4L2 (webcam) par tccd. LECTURE SEULE : aucune
+# écriture UVC en jalon 2. Ne jamais passer à rw sans revue security.
+DeviceAllow=char-video4linux r
+
+# Écritures sysfs (cpufreq, backlight, LED, charge, platform_profile).
+# ProtectKernelTunables=yes monterait /sys en lecture seule et casserait le
+# pilotage matériel ; décision bloquante documentée (D-règles système).
+ProtectKernelTunables=no
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+KeyringMode=private
+
+RestrictAddressFamilies=AF_UNIX AF_NETLINK
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+RemoveIPC=yes
+SystemCallArchitectures=native
+SecureBits=noroot-locked
+LimitCORE=0
+
+# Budget de sécurité (REVIEW_JALON1 R-05) : le daemon au repos doit rester sous
+# 30 Mo RSS. Ces limites servent de garde-fou anti-OOM, pas de budget de
+# performance. CPUQuota évite qu'une rafale D-Bus affame la session.
+MemoryMax=256M
+TasksMax=64
+CPUQuota=25%
+
+# root possède les attributs sysfs ; aucun capability n'est requis par défaut.
+# Si un pilote expose un nœud non lisible par root sans CAP_DAC_OVERRIDE,
+# l'ajouter explicitement ici et documenter le cas.
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+# Filtre de syscalls volontairement désactivé tant que `ioctl` n'a pas été
+# validé dans @system-service : `systemd-analyze syscall-filter | grep ioctl`.
+# SystemCallFilter=@system-service
+
+[Install]
+WantedBy=multi-user.target

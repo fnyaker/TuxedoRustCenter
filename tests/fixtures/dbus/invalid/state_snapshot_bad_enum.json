@@ -1,0 +1,8 @@
+{
+  "contractVersion": 1,
+  "revision": 9,
+  "ppdProfile": "balanced",
+  "powerSource": "solar",
+  "manualOverride": false,
+  "activeProfile": null
+}

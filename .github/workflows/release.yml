@@ -1,0 +1,417 @@
+name: Release packages
+
+# NOTE supply-chain (REVIEW_JALON1 R-23) : les actions sont référencées par tag
+# pour rester maintenables. Le passage à des SHA de commit est suivi par
+# `security`/`qa-integration` ; ne pas ajouter d'action non officielle ici.
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-deb:
+    name: Build .deb (Debian/Ubuntu)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Toolchain Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Dépendances de build et de validation
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential pkg-config \
+            qt6-base-dev qt6-declarative-dev qt6-tools-dev qt6-l10n-tools \
+            qt6-svg-dev libgl1-mesa-dev \
+            dpkg-dev lintian desktop-file-utils appstream libxml2-utils \
+            systemd systemd-udev udev dbus dbus-daemon
+
+      - name: Build + arborescence + validation + .deb + source
+        run: scripts/release/build.sh --source
+
+      - name: Admin.Hw absent par défaut et gating strict
+        run: |
+          set -e
+          hw_bin=target/release/tccd-admin-hw
+          test -x "$hw_bin"
+          # Paquet par défaut : aucun fichier admin, ni phase 1 ni phase 2.
+          test ! -e build/pkgroot/usr/libexec/tuxedo-rust-center/tccd-admin
+          test ! -e build/pkgroot/usr/libexec/tuxedo-rust-center/tccd-admin-hw
+          test ! -e build/pkgroot/usr/lib/systemd/system/tccd-admin-hw.service
+          test ! -e build/pkgroot/usr/share/dbus-1/system-services/com.tuxedocomputers.tccd.Admin.Hw.service
+
+          # `--with-admin` seul n'installe JAMAIS Admin.Hw.
+          TCC_WITH_ADMIN=1 scripts/release/install-tree.sh build/admin-only-root >/dev/null
+          test -x build/admin-only-root/usr/libexec/tuxedo-rust-center/tccd-admin
+          test ! -e build/admin-only-root/usr/libexec/tuxedo-rust-center/tccd-admin-hw
+          test ! -e build/admin-only-root/usr/lib/systemd/system/tccd-admin-hw.service
+
+          # Binaire absent ⇒ refus explicite, jamais une activation morte.
+          mv "$hw_bin" target/release/tccd-admin-hw.off
+          if TCC_WITH_ADMIN_HW=1 scripts/release/install-tree.sh build/admin-hw-root >/dev/null 2>&1; then
+            mv target/release/tccd-admin-hw.off "$hw_bin"
+            echo "TCC_WITH_ADMIN_HW=1 devait échouer sans binaire tccd-admin-hw" >&2
+            exit 1
+          fi
+          test ! -e build/admin-hw-root/usr/lib/systemd/system/tccd-admin-hw.service
+          mv target/release/tccd-admin-hw.off "$hw_bin"
+
+          # Binaire présent ⇒ binaire + unité + activation ensemble, validés.
+          TCC_WITH_ADMIN_HW=1 scripts/release/install-tree.sh build/hw-root >/dev/null
+          test -x build/hw-root/usr/libexec/tuxedo-rust-center/tccd-admin-hw
+          test -f build/hw-root/usr/lib/systemd/system/tccd-admin-hw.service
+          test -f build/hw-root/usr/share/dbus-1/system-services/com.tuxedocomputers.tccd.Admin.Hw.service
+          scripts/release/validate.sh --tree build/hw-root
+          # Le binaire ne tire ni Qt, ni Node, ni Python.
+          ! ldd build/hw-root/usr/libexec/tuxedo-rust-center/tccd-admin-hw | grep -qE 'Qt6|libpython|libnode'
+          build/hw-root/usr/libexec/tuxedo-rust-center/tccd-admin-hw --version \
+            | grep -q 'AdminHw1'
+
+      - name: lintian (erreurs bloquantes)
+        run: lintian --fail-on error build/packages/*.deb
+
+      - name: Inspection du paquet
+        run: |
+          set -e
+          deb=$(ls build/packages/*.deb)
+          dpkg-deb --info "$deb"
+          dpkg-deb --contents "$deb" > /tmp/contents.txt
+          ! grep -qE '(^| )\./opt/' /tmp/contents.txt
+          ! grep -qE '^-rws|^-r-xr-s' /tmp/contents.txt
+          # tccd-admin et tccd-sleep ne doivent pas être livrés
+          ! grep -q 'tccd-admin' /tmp/contents.txt
+          ! grep -q 'tccd-sleep' /tmp/contents.txt
+          grep -q './usr/libexec/tuxedo-rust-center/tccd' /tmp/contents.txt
+          grep -q './usr/libexec/tuxedo-rust-center/tccd-user' /tmp/contents.txt
+
+      - name: Score systemd
+        run: |
+          set -e
+          score=$(systemd-analyze security --offline=true build/pkgroot/usr/lib/systemd/system/tccd.service \
+            | sed -n 's/.*: \([0-9][0-9.]*\).*/\1/p' | tail -1)
+          echo "tccd.service exposure: $score"
+          awk -v s="$score" 'BEGIN { exit !(s <= 4.0) }'
+
+          # Phase 2 (préparée, non installée) : cible design §4.4 ≤ 3.0.
+          hw_score=$(systemd-analyze security --offline=true packaging/systemd/tccd-admin-hw.service \
+            | sed -n 's/.*: \([0-9][0-9.]*\).*/\1/p' | tail -1)
+          echo "tccd-admin-hw.service exposure: $hw_score"
+          awk -v s="$hw_score" 'BEGIN { exit !(s <= 3.0) }'
+
+      - name: Publier les artefacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: deb-package
+          path: |
+            build/packages/*.deb
+            build/packages/SHA256SUMS
+            build/*.tar.gz
+          if-no-files-found: error
+
+  deb-install:
+    name: Test installation (.deb, Debian trixie)
+    needs: build-deb
+    runs-on: ubuntu-latest
+    container: debian:trixie
+    steps:
+      - name: Récupérer le .deb
+        uses: actions/download-artifact@v4
+        with:
+          name: deb-package
+          path: /tmp/pkg
+
+      - name: Installer et vérifier
+        run: |
+          set -e
+          apt-get update
+          apt-get install -y --no-install-recommends systemd dbus \
+            desktop-file-utils appstream libxml2-utils python3 qt6-declarative-dev
+          deb=$(ls /tmp/pkg/*.deb)
+          apt-get install -y --no-install-recommends "$deb"
+
+          # Chemins FHS exacts
+          test -x /usr/bin/tuxedo-rust-center
+          test -x /usr/bin/tcc-cli
+          test -x /usr/libexec/tuxedo-rust-center/tccd
+          test -x /usr/libexec/tuxedo-rust-center/tccd-user
+          test ! -e /usr/libexec/tuxedo-rust-center/tccd-admin
+          test ! -e /usr/lib/systemd/system/tccd-admin.service
+          test ! -e /usr/share/dbus-1/system-services/com.tuxedocomputers.tccd.Admin.service
+          test ! -e /usr/libexec/tuxedo-rust-center/tccd-admin-hw
+          test ! -e /usr/lib/systemd/system/tccd-admin-hw.service
+          test ! -e /usr/share/dbus-1/system-services/com.tuxedocomputers.tccd.Admin.Hw.service
+          test ! -e /usr/lib/systemd/system/tccd-sleep.service
+          test ! -e /opt/tuxedo-control-center
+          test -f /usr/share/tuxedo-rust-center/qml/Main.qml
+          test -f /etc/tuxedo-rust-center/README
+
+          # Units et intégration
+          systemd-analyze verify /usr/lib/systemd/system/tccd.service
+          systemd-analyze security --offline=true /usr/lib/systemd/system/tccd.service
+          desktop-file-validate /usr/share/applications/tuxedo-rust-center.desktop
+          appstreamcli validate --no-net \
+            /usr/share/metainfo/com.tuxedocomputers.TuxedoRustCenter.metainfo.xml
+
+          # Aucun setuid, aucun /opt, aucune capability
+          ! find /usr /etc /var/lib/tuxedo-rust-center -path '*tuxedo-rust-center*' -perm /6000 | grep .
+          ! getcap -r /usr/libexec/tuxedo-rust-center 2>/dev/null | grep .
+
+          # Smoke test GUI : le shell QML installé doit se charger (offscreen).
+          gui_rc=0
+          QT_QPA_PLATFORM=offscreen timeout 3 /usr/bin/tuxedo-rust-center >/tmp/gui.log 2>&1 || gui_rc=$?
+          test "$gui_rc" -eq 124
+          ! grep -qE 'QQmlApplicationEngine failed|Main.qml introuvable|is not a type|Unsupported image format|is not installed' /tmp/gui.log
+
+          # Imports QML de l'arborescence installée (Qt.labs.platform,
+          # QtQuick.Dialogs, QtQuick.Effects, QtQml.Models, ...).
+          scanner=$(command -v qmlimportscanner || find /usr/lib/qt6 -name qmlimportscanner -type f | head -1)
+          "$scanner" -rootPath /usr/share/tuxedo-rust-center/qml \
+            -importPath /usr/lib/x86_64-linux-gnu/qt6/qml > /tmp/qml-imports.json
+          python3 - <<'PYEOF'
+          import json, sys
+          required = {
+              "QtCore", "Qt.labs.platform", "QtQml.Models", "QtQuick",
+              "QtQuick.Controls", "QtQuick.Dialogs", "QtQuick.Effects",
+              "QtQuick.Layouts", "QtQuick.Shapes", "QtQuick.Window",
+          }
+          data = json.load(open("/tmp/qml-imports.json"))
+          found = {i["name"]: i.get("path") for i in data if i.get("type") == "module"}
+          missing = [m for m in sorted(required) if not found.get(m)]
+          if missing:
+              print("modules QML non résolus:", missing, file=sys.stderr)
+              sys.exit(1)
+          print("imports QML OK:", ", ".join(sorted(required)))
+          PYEOF
+
+      - name: Désinstaller et vérifier le nettoyage
+        run: |
+          set -e
+          apt-get purge -y tuxedo-rust-center
+          test ! -e /usr/bin/tuxedo-rust-center
+          test ! -e /usr/libexec/tuxedo-rust-center/tccd
+          test ! -e /usr/share/tuxedo-rust-center
+          test ! -e /var/lib/tuxedo-rust-center
+          test ! -e /etc/tuxedo-rust-center/README
+          # /etc/tcc de l'ancien TCC ne doit jamais être touché
+          true
+
+  build-rpm:
+    name: Build RPM (Fedora)
+    runs-on: ubuntu-latest
+    container: fedora:latest
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Dépendances
+        run: |
+          dnf install -y --setopt=install_weak_deps=False \
+            cargo rust gcc gcc-c++ make tar gzip \
+            qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qtsvg-devel \
+            rpm-build rpmlint systemd-rpm-macros \
+            desktop-file-utils appstream libxml2 systemd systemd-udev dbus dbus-daemon dbus-tools
+
+      - name: Spec conditionnel admin (sans binaire)
+        run: |
+          set -e
+          rpmspec -P distro/rpm/tuxedo-rust-center.spec >/dev/null
+          rpmspec -P --with admin distro/rpm/tuxedo-rust-center.spec >/dev/null
+          rpmspec -P --with admin_hw distro/rpm/tuxedo-rust-center.spec >/dev/null
+          rpmspec -P --with admin --with admin_hw distro/rpm/tuxedo-rust-center.spec >/dev/null
+          # Indépendance : --with admin seul n'installe pas Admin.Hw, et
+          # --with admin_hw seul n'installe pas la phase 1.
+          ! rpmspec -P --with admin distro/rpm/tuxedo-rust-center.spec \
+            | grep -q '/usr/libexec/tuxedo-rust-center/tccd-admin-hw'
+          ! rpmspec -P --with admin_hw distro/rpm/tuxedo-rust-center.spec \
+            | grep -q '/usr/libexec/tuxedo-rust-center/tccd-admin$'
+          rpmspec -P --with admin_hw distro/rpm/tuxedo-rust-center.spec \
+            | grep -q '/usr/lib/systemd/system/tccd-admin-hw.service'
+
+      - name: Build RPM
+        run: scripts/release/make-rpm.sh
+
+      - name: rpmlint
+        run: |
+          set -e
+          out=$(rpmlint distro/rpm/tuxedo-rust-center.spec build/packages/*.rpm || true)
+          printf '%s\n' "$out"
+          ! printf '%s\n' "$out" | grep -q ': E: '
+
+      - name: Inspection du RPM
+        run: |
+          set -e
+          rpm=$(ls build/packages/*.rpm)
+          rpm -qip "$rpm"
+          rpm -qlp "$rpm" > /tmp/files.txt
+          ! grep -qE '^/opt/' /tmp/files.txt
+          ! grep -q 'tccd-admin' /tmp/files.txt
+          ! grep -q 'tccd-sleep' /tmp/files.txt
+          grep -qx '/usr/libexec/tuxedo-rust-center/tccd' /tmp/files.txt
+          grep -qx '/usr/libexec/tuxedo-rust-center/tccd-user' /tmp/files.txt
+
+      - name: Installer, vérifier, désinstaller
+        run: |
+          set -e
+          rpm=$(ls build/packages/*.rpm)
+          dnf install -y --setopt=install_weak_deps=False "$rpm"
+          test -x /usr/bin/tuxedo-rust-center
+          test -x /usr/libexec/tuxedo-rust-center/tccd
+          test -x /usr/libexec/tuxedo-rust-center/tccd-user
+          test ! -e /usr/libexec/tuxedo-rust-center/tccd-admin
+          test ! -e /usr/libexec/tuxedo-rust-center/tccd-admin-hw
+          test ! -e /usr/lib/systemd/system/tccd-admin-hw.service
+          test ! -e /usr/share/dbus-1/system-services/com.tuxedocomputers.tccd.Admin.Hw.service
+          test ! -e /etc/systemd/system/multi-user.target.wants/tccd.service || true
+          systemd-analyze verify /usr/lib/systemd/system/tccd.service
+          gui_rc=0
+          QT_QPA_PLATFORM=offscreen timeout 3 /usr/bin/tuxedo-rust-center >/tmp/gui.log 2>&1 || gui_rc=$?
+          test "$gui_rc" -eq 124
+          ! grep -qE 'QQmlApplicationEngine failed|Main.qml introuvable|is not a type|Unsupported image format|is not installed' /tmp/gui.log
+
+          dnf remove -y tuxedo-rust-center
+          test ! -e /usr/bin/tuxedo-rust-center
+          test ! -e /usr/share/tuxedo-rust-center
+          test ! -e /var/lib/tuxedo-rust-center
+
+      - name: Publier le RPM
+        uses: actions/upload-artifact@v4
+        with:
+          name: rpm-package
+          path: build/packages/*.rpm
+          if-no-files-found: error
+
+  build-arch:
+    name: Build Arch Linux
+    runs-on: ubuntu-latest
+    container: archlinux:latest
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Dépendances
+        run: |
+          pacman -Syu --noconfirm --needed base-devel rust \
+            qt6-base qt6-declarative qt6-svg hicolor-icon-theme \
+            namcap desktop-file-utils appstream libxml2 systemd dbus \
+            git tar gzip sudo
+
+      - name: Utilisateur de build (makepkg refuse root)
+        run: |
+          useradd -m -G wheel builder
+          echo 'builder ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/builder
+          chown -R builder:builder "$GITHUB_WORKSPACE"
+
+      - name: Build paquet Arch
+        run: |
+          su builder -c "cd '$GITHUB_WORKSPACE' && TCC_BUILD_DIR='$GITHUB_WORKSPACE/build' scripts/release/make-arch.sh"
+
+      - name: namcap
+        run: |
+          set -e
+          pkg=$(ls build/packages/*.pkg.tar.zst)
+          out=$(namcap "$pkg" || true)
+          printf '%s\n' "$out"
+          ! printf '%s\n' "$out" | grep -E ' E: '
+
+      - name: Inspection de l'archive
+        run: |
+          set -e
+          pkg=$(ls build/packages/*.pkg.tar.zst)
+          bsdtar -tf "$pkg" > /tmp/files.txt
+          ! grep -qE '^opt/' /tmp/files.txt
+          ! grep -q 'tccd-admin' /tmp/files.txt
+          ! grep -q 'tccd-sleep' /tmp/files.txt
+          grep -qx 'usr/libexec/tuxedo-rust-center/tccd' /tmp/files.txt
+          grep -qx 'usr/libexec/tuxedo-rust-center/tccd-user' /tmp/files.txt
+
+      - name: Installer, vérifier, désinstaller
+        run: |
+          set -e
+          pkg=$(ls build/packages/*.pkg.tar.zst)
+          pacman -U --noconfirm "$pkg"
+          test -x /usr/bin/tuxedo-rust-center
+          test -x /usr/libexec/tuxedo-rust-center/tccd
+          test ! -e /usr/libexec/tuxedo-rust-center/tccd-admin
+          test ! -e /usr/libexec/tuxedo-rust-center/tccd-admin-hw
+          test ! -e /usr/lib/systemd/system/tccd-admin-hw.service
+          test ! -e /usr/share/dbus-1/system-services/com.tuxedocomputers.tccd.Admin.Hw.service
+          systemd-analyze verify /usr/lib/systemd/system/tccd.service
+          gui_rc=0
+          QT_QPA_PLATFORM=offscreen timeout 3 /usr/bin/tuxedo-rust-center >/tmp/gui.log 2>&1 || gui_rc=$?
+          test "$gui_rc" -eq 124
+          ! grep -qE 'QQmlApplicationEngine failed|Main.qml introuvable|is not a type|Unsupported image format|is not installed' /tmp/gui.log
+
+          pacman -R --noconfirm tuxedo-rust-center
+          test ! -e /usr/bin/tuxedo-rust-center
+          test ! -e /usr/share/tuxedo-rust-center
+
+      - name: Publier le paquet Arch
+        uses: actions/upload-artifact@v4
+        with:
+          name: arch-package
+          path: build/packages/*.pkg.tar.zst
+          if-no-files-found: error
+
+  release:
+    name: Publier la release
+    needs: [build-deb, deb-install, build-rpm, build-arch]
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Récupérer les artefacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "*-package"
+          path: dist
+          merge-multiple: true
+
+      - name: Sommes de contrôle
+        run: |
+          set -e
+          cd dist
+          find . -maxdepth 1 -type f ! -name 'SHA256SUMS*' -printf '%P\n' \
+            | LC_ALL=C sort \
+            | while IFS= read -r f; do sha256sum -- "$f"; done > SHA256SUMS
+          cat SHA256SUMS
+
+      - name: Signature GPG (optionnelle)
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+          GPG_KEY_ID: ${{ secrets.GPG_KEY_ID }}
+        run: |
+          set -e
+          if [ -z "${GPG_PRIVATE_KEY:-}" ] || [ -z "${GPG_KEY_ID:-}" ]; then
+            echo "Pas de clé GPG configurée : release non signée."
+            exit 0
+          fi
+          printf '%s' "$GPG_PRIVATE_KEY" | gpg --batch --import
+          gpg --batch --yes --armor --detach-sign \
+            --local-user "$GPG_KEY_ID" dist/SHA256SUMS
+          gpg --verify dist/SHA256SUMS.asc dist/SHA256SUMS
+
+      - name: Créer la release GitHub
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" dist/* \
+            --title "TuxedoRustCenter $GITHUB_REF_NAME" \
+            --generate-notes

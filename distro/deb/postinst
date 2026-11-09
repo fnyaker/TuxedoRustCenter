@@ -1,0 +1,68 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# postinst du paquet Debian tuxedo-rust-center.
+# Idempotent, sans téléchargement, sans écriture hors FHS.
+# Respecte policy-rc.d via deb-systemd-invoke.
+
+set -e
+
+legacy_install=0
+
+if [ "$1" = "configure" ]; then
+    # Détection d'une installation manuelle de l'ancien TCC (archive /opt).
+    # Le paquet Conflicts/Replaces avec tuxedo-control-center, mais une
+    # installation hors paquet peut subsister : on avertit sans rien supprimer.
+    if [ -d /opt/tuxedo-control-center ] || command -v tuxedo-control-center >/dev/null 2>&1; then
+        legacy_install=1
+        cat >&2 <<'EOF'
+AVERTISSEMENT — TuxedoRustCenter
+Une installation de TUXEDO Control Center a été détectée dans /opt ou via un
+lien tuxedo-control-center présent dans /usr/bin. Les deux daemons ne doivent
+JAMAIS piloter le matériel en même temps (même nom D-Bus
+com.tuxedocomputers.tccd, mêmes attributs sysfs).
+
+Procédure :
+  1. arrêter et désactiver l'ancien service : systemctl disable --now tccd
+  2. vérifier qu'aucun processus ne tourne : pgrep -af tccd
+  3. activer et démarrer la réécriture : systemctl enable --now tccd
+  4. migrer les données : voir /usr/share/doc/tuxedo-rust-center/MIGRATION.md
+
+Rien n'a été supprimé. Le service tccd.service n'a été ni activé ni démarré
+automatiquement pour éviter un conflit au prochain démarrage.
+EOF
+    fi
+
+    # Lien d'activation laissé par l'ancien TCC : l'unité tccd-sleep n'existe
+    # plus (REVIEW_JALON1 R-06). Nettoyage même en chroot (pas de systemd).
+    if [ -L /etc/systemd/system/sleep.target.wants/tccd-sleep.service ] \
+        && [ ! -e /usr/lib/systemd/system/tccd-sleep.service ]; then
+        rm -f /etc/systemd/system/sleep.target.wants/tccd-sleep.service
+    fi
+
+    if [ -d /run/systemd/system ]; then
+        # Activation uniquement à l'installation initiale (pas de réactivation
+        # d'un service que l'administrateur a désactivé lors d'une mise à jour).
+        if [ -z "${2:-}" ] && [ "$legacy_install" = "0" ]; then
+            if command -v deb-systemd-helper >/dev/null 2>&1; then
+                deb-systemd-helper enable tccd.service >/dev/null || true
+            else
+                systemctl enable tccd.service >/dev/null 2>&1 || true
+            fi
+        fi
+        systemctl daemon-reload >/dev/null 2>&1 || true
+
+        if [ "$legacy_install" = "0" ]; then
+            if [ -n "${2:-}" ]; then
+                action=restart
+            else
+                action=start
+            fi
+            if command -v deb-systemd-invoke >/dev/null 2>&1; then
+                deb-systemd-invoke "$action" tccd.service >/dev/null || true
+            fi
+        fi
+    fi
+fi
+
+exit 0

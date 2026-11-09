@@ -1,0 +1,23 @@
+{
+  "namespace": "org.tuxedocomputers.tccd.AdminHw1.Error",
+  "cases": [
+    {
+      "code": "PolicyDenied",
+      "method": "SetOdmProfile",
+      "reason": "ppd.platform_profile",
+      "dbusName": "org.tuxedocomputers.tccd.AdminHw1.Error.PolicyDenied"
+    },
+    {
+      "code": "PartialApply",
+      "method": "SetTdpValues",
+      "reason": "pl1",
+      "dbusName": "org.tuxedocomputers.tccd.AdminHw1.Error.PartialApply"
+    },
+    {
+      "code": "NotSupported",
+      "method": "SetNvidiaCtgpOffset",
+      "reason": "ctgp_offset",
+      "dbusName": "org.tuxedocomputers.tccd.AdminHw1.Error.NotSupported"
+    }
+  ]
+}

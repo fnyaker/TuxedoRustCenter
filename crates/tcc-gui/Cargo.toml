@@ -1,0 +1,32 @@
+[package]
+name = "tcc-gui"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "GUI Qt 6 native de TuxedoRustCenter"
+
+[features]
+default = []
+# Overrides de développement (D7) : `TCC_QML_DIR`, `TCC_DBUS_SERVICE`,
+# `TCC_DBUS_BUS`. **Absente des paquets release** ; sans elle, la GUI utilise
+# les chemins installés et `com.tuxedocomputers.tccd` sur le bus système.
+dev-overrides = []
+
+[dependencies]
+cxx = "1.0"
+cxx-qt = "0.10"
+cxx-qt-lib = { version = "0.10", features = ["qt_full"] }
+libc.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+tcc-core = { path = "../tcc-core" }
+tcc-ipc = { path = "../tcc-ipc" }
+tokio.workspace = true
+zbus.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true
+
+[build-dependencies]
+cxx-qt-build = "0.10"

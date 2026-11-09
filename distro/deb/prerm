@@ -1,0 +1,26 @@
+#!/bin/sh
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# prerm du paquet Debian tuxedo-rust-center.
+# Arrête le daemon avant suppression/déconfiguration, jamais pendant une
+# simple mise à jour (postinst relance le service).
+
+set -e
+
+case "$1" in
+    remove|deconfigure)
+        if [ -d /run/systemd/system ]; then
+            # tccd-admin / tccd-admin-hw n'existent qu'avec TCC_WITH_ADMIN=1 /
+            # TCC_WITH_ADMIN_HW=1 ; chaque stop est un no-op sinon.
+            if command -v deb-systemd-invoke >/dev/null 2>&1; then
+                deb-systemd-invoke stop tccd-admin-hw.service >/dev/null || true
+                deb-systemd-invoke stop tccd-admin.service >/dev/null || true
+                deb-systemd-invoke stop tccd.service >/dev/null || true
+            fi
+        fi
+        ;;
+    upgrade|failed-upgrade)
+        ;;
+esac
+
+exit 0

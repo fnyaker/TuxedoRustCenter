@@ -1,0 +1,14 @@
+# TuxedoRustCenter — hotplug webcam.
+#
+# IMPORTANT : cette règle ne lance AUCUN processus. L'original exécutait
+# `python3 cameractrls.py` depuis udev, ce qui est proscrit ici (pas de Python,
+# pas de shell, pas de script invoqué par udev).
+#
+# tccd écoute le netlink udev (SUBSYSTEM=="video4linux") et applique lui-même
+# les préréglages V4L2 stockés dans /var/lib/tuxedo-rust-center/webcam.json.
+# Le tag permet à un futur service ou à l'UI de retrouver les périphériques
+# concernés sans analyse de chaîne.
+#
+# Aucune règle RUN+=, aucun IMPORT{program}=, aucune interpolation $env{...}
+# dans une ligne de commande.
+SUBSYSTEM=="video4linux", ACTION=="add|change", KERNEL=="video[0-9]*", TAG+="tuxedo-rust-center-webcam"

@@ -1,0 +1,25 @@
+{
+  "available": false,
+  "session": {
+    "type": "wayland",
+    "desktop": "Hyprland",
+    "waylandDisplay": "wayland-1",
+    "display": null
+  },
+  "backend": {
+    "kind": "hyprland",
+    "name": "hyprland",
+    "available": false
+  },
+  "internalOutput": {
+    "name": "",
+    "connected": false,
+    "enabled": false,
+    "hasInternalDisplay": false,
+    "currentMode": null,
+    "modes": []
+  },
+  "supported": false,
+  "dryRun": false,
+  "error": "backend absent"
+}

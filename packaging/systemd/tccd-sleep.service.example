@@ -1,0 +1,57 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# RÉFÉRENCE UNIQUEMENT — CE FICHIER N'EST PAS INSTALLÉ.
+#
+# `tccd-sleep.service` a été retiré du paquet (docs/security/REVIEW_JALON1.md
+# R-06) : son `ExecStart=/usr/bin/systemctl stop tccd.service` est un
+# anti-pattern (systemctl dans une unité attendant la fin d'un job de la même
+# transaction), son `ExecStop` redémarre tccd même après un arrêt demandé, et
+# `systemd-analyze security` le note 9.2 UNSAFE.
+#
+# Remplacement prévu, à implémenter par `linux-platform` dans `tccd` :
+#   - s'abonner au signal org.freedesktop.login1.Manager.PrepareForSleep(b) ;
+#   - sur true  : sauvegarder l'état, relâcher /dev/tuxedo_io ;
+#   - sur false : rouvrir le device, réappliquer le profil actif.
+#   - fallback documenté : hook binaire Rust dans /usr/lib/systemd/system-sleep/
+#     (jamais un script shell invoqué par udev/systemd-sleep avec des arguments
+#     non validés).
+#
+# Conserver ce fichier pour référence historique et pour la parité avec
+# l'original ; ne pas le réintroduire dans les manifests sans résoudre R-06.
+
+[Unit]
+Description=TuxedoRustCenter stop/start around system sleep (NOT INSTALLED)
+Documentation=file:/usr/share/doc/tuxedo-rust-center/PLATFORM_DESIGN.md
+Before=sleep.target
+StopWhenUnneeded=yes
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/systemctl stop tccd.service
+ExecStop=/usr/bin/systemctl start tccd.service
+
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectKernelLogs=yes
+ProtectControlGroups=yes
+ProtectClock=yes
+ProtectHostname=yes
+RestrictAddressFamilies=AF_UNIX
+RestrictNamespaces=yes
+RestrictRealtime=yes
+RestrictSUIDSGID=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+UMask=0077
+LimitCORE=0
+CapabilityBoundingSet=
+AmbientCapabilities=
+
+[Install]
+WantedBy=sleep.target

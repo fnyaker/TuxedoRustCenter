@@ -1,0 +1,375 @@
+{
+  "device": {
+    "available": true,
+    "vendor": "TUXEDO Computers GmbH",
+    "productName": "TUXEDO InfinityBook Pro 14 Gen9",
+    "boardName": "PH4PRX1_REN",
+    "boardVendor": "TUXEDO",
+    "chassisVendor": "TUXEDO",
+    "sku": "IBP14G9",
+    "isTuxedo": true,
+    "model": "IBP14G9",
+    "kernelRelease": "6.12.0-tuxedo",
+    "architecture": "x86_64",
+    "tuxedoDriverVersion": "0.3.9",
+    "errors": []
+  },
+  "cpu": {
+    "totalCores": 16,
+    "onlineCores": 12,
+    "availableGovernors": ["performance", "powersave"],
+    "availableEpp": [
+      "default",
+      "performance",
+      "balance_performance",
+      "balance_power",
+      "power"
+    ],
+    "hasCpuControl": true,
+    "writable": true,
+    "scalingDriver": "intel_pstate",
+    "errors": []
+  },
+  "display": {
+    "available": true,
+    "hasInternalDisplay": true,
+    "internalConnector": "eDP-1",
+    "connected": true,
+    "source": "drm",
+    "errors": []
+  },
+  "capabilities": {
+    "hasBattery": true,
+    "hasAc": true,
+    "hasIgpu": true,
+    "hasDedicatedGpu": true,
+    "errors": []
+  },
+  "charging": {
+    "available": true,
+    "writeSupported": true,
+    "profileWritable": true,
+    "priorityWritable": true,
+    "thresholdsWritable": true,
+    "chargeTypeAvailable": true,
+    "chargeTypeWritable": true,
+    "chargeTypes": [],
+    "profiles": ["high_capacity", "balanced", "stationary"],
+    "profile": "balanced",
+    "priorities": ["charging", "performance"],
+    "priority": "charging",
+    "battery": "BAT0",
+    "startThreshold": 40,
+    "endThreshold": 80,
+    "startThresholds": [40, 50, 60],
+    "endThresholds": [80, 90, 100],
+    "chargeType": "Custom",
+    "thresholdsAvailable": true,
+    "applied": true,
+    "errors": []
+  },
+  "lighting": {
+    "available": true,
+    "enabled": true,
+    "unsupported": false,
+    "keyboard": {
+      "available": true,
+      "writable": true,
+      "modes": ["static"],
+      "kind": "rgb",
+      "zones": 3,
+      "maxBrightness": 100,
+      "maxRed": 255,
+      "maxGreen": 255,
+      "maxBlue": 255,
+      "bufferInput": true
+    },
+    "lightbar": {
+      "available": true,
+      "writable": true,
+      "modes": ["static"],
+      "maxBrightness": 80,
+      "maxRed": 255,
+      "maxGreen": 255,
+      "maxBlue": 255
+    },
+    "states": [
+      { "brightness": 50, "red": 255, "green": 32, "blue": 16 },
+      { "brightness": 30, "red": 16, "green": 32, "blue": 255 },
+      { "brightness": 10, "red": 0, "green": 0, "blue": 0 }
+    ],
+    "lightbarState": { "brightness": 20, "red": 4, "green": 5, "blue": 6 },
+    "applied": true,
+    "errors": []
+  },
+  "odm": {
+    "available": true,
+    "odmWritable": true,
+    "tdpWritable": true,
+    "platformProfile": {
+      "available": true,
+      "writable": true,
+      "source": "tuxedo_platform_profile",
+      "current": "balanced",
+      "choices": ["power_save", "balanced", "performance"],
+      "defaultProfile": "balanced",
+      "acpiQuirkBlocked": false,
+      "owner": "tcc",
+      "applied": "balanced"
+    },
+    "tdpAvailable": true,
+    "tdp": [
+      { "descriptor": "pl1", "current": 35, "min": 10, "max": 80 },
+      { "descriptor": "pl2", "current": 45, "min": 10, "max": 90 },
+      { "descriptor": "pl4", "current": 65, "min": 10, "max": 120 }
+    ],
+    "interface": "uniwill",
+    "moduleVersion": "0.3.9",
+    "applied": true,
+    "errors": []
+  },
+  "sensors": {
+    "enabled": true,
+    "available": true,
+    "cpu": {
+      "temperatureC": 55.5,
+      "frequencyMhz": 3200,
+      "powerW": 28.5
+    },
+    "igpu": {
+      "vendor": "intel",
+      "role": "integrated",
+      "name": "Intel Iris Xe Graphics",
+      "card": "card0",
+      "temperatureC": 54.0,
+      "frequencyMhz": 1100,
+      "maxFrequencyMhz": 1650,
+      "powerW": 4.5
+    },
+    "dgpu": {
+      "vendor": "nvidia",
+      "role": "discrete",
+      "name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "card": "card1",
+      "temperatureC": 61.0,
+      "frequencyMhz": 1350,
+      "maxFrequencyMhz": 2400,
+      "powerW": 42.0
+    },
+    "gpus": [
+      {
+        "vendor": "intel",
+        "role": "integrated",
+        "name": "Intel Iris Xe Graphics",
+        "card": "card0",
+        "temperatureC": 54.0,
+        "frequencyMhz": 1100,
+        "maxFrequencyMhz": 1650,
+        "powerW": 4.5
+      },
+      {
+        "vendor": "nvidia",
+        "role": "discrete",
+        "name": "NVIDIA GeForce RTX 4060 Laptop GPU",
+        "card": "card1",
+        "temperatureC": 61.0,
+        "frequencyMhz": 1350,
+        "maxFrequencyMhz": 2400,
+        "powerW": 42.0
+      }
+    ]
+  },
+  "nvidia": {
+    "available": true,
+    "writable": true,
+    "attributeAvailable": true,
+    "nvidiaSmiAvailable": true,
+    "ctgpOffset": 15,
+    "defaultPowerLimit": 60.0,
+    "maxPowerLimit": 90.0,
+    "appliedOffset": 15,
+    "errors": []
+  },
+  "webcam": {
+    "switchAvailable": true,
+    "controlsWritable": false,
+    "enabled": true,
+    "controlsSupported": true,
+    "controlsTruncated": false,
+    "devices": [
+      {
+        "name": "Integrated Camera",
+        "devicePath": "/dev/video0",
+        "deviceName": "Integrated Camera",
+        "index": 0,
+        "metadata": false,
+        "identity": {
+          "vendor": "0bda",
+          "product": "5634",
+          "serial": null,
+          "fallbackName": "Integrated Camera"
+        },
+        "busInfo": "usb-0000:00:14.0-1",
+        "controls": [
+          {
+            "key": "brightness",
+            "name": "Brightness",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": { "kind": "integer", "value": 128 },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "contrast",
+            "name": "Contrast",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 32,
+            "current": { "kind": "integer", "value": 32 },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "focus_auto",
+            "name": "Focus, Auto",
+            "kind": "boolean",
+            "min": 0,
+            "max": 1,
+            "step": 1,
+            "default": 1,
+            "current": { "kind": "boolean", "value": true },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "advanced",
+            "simple": false
+          },
+          {
+            "key": "power_line_frequency",
+            "name": "Power Line Frequency",
+            "kind": "menu",
+            "min": 0,
+            "max": 2,
+            "step": 1,
+            "default": 1,
+            "current": { "kind": "menu", "index": 1, "key": "50_hz", "label": "50 Hz" },
+            "menu": [
+              { "index": 0, "key": "disabled", "label": "Disabled" },
+              { "index": 1, "key": "50_hz", "label": "50 Hz" },
+              { "index": 2, "key": "60_hz", "label": "60 Hz" }
+            ],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "advanced",
+            "simple": false
+          },
+          {
+            "key": "zoom_absolute",
+            "name": "Zoom, Absolute",
+            "kind": "integer",
+            "min": 0,
+            "max": 500,
+            "step": 1,
+            "default": 100,
+            "current": { "kind": "integer", "value": 100 },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "advanced",
+            "simple": false
+          }
+        ],
+        "controlsError": null
+      },
+      {
+        "name": "Integrated Camera Metadata",
+        "devicePath": "/dev/video1",
+        "deviceName": "Integrated Camera",
+        "index": 1,
+        "metadata": true,
+        "identity": {
+          "vendor": "0bda",
+          "product": "5634",
+          "serial": null,
+          "fallbackName": "Integrated Camera"
+        },
+        "busInfo": "usb-0000:00:14.0-1",
+        "controls": [],
+        "controlsError": null
+      }
+    ],
+    "applied": true,
+    "errors": []
+  },
+  "fnLock": {
+    "supported": true,
+    "enabled": false,
+    "writable": true
+  },
+  "prime": {
+    "available": true,
+    "writable": false,
+    "platformSupported": true,
+    "supported": true,
+    "tuxPrime": true,
+    "mode": "on-demand",
+    "internalDisplayOnNvidia": false,
+    "requiresOffloading": true,
+    "primeSelect": "/usr/bin/prime-select"
+  },
+  "ycbcr": {
+    "available": true,
+    "ports": [
+      { "card": 0, "port": "DP-1", "forced": false },
+      { "card": 0, "port": "HDMI-A-1", "forced": false }
+    ],
+    "pendingModeReapply": false,
+    "applied": true,
+    "errors": []
+  },
+  "x-extension": {
+    "future": true
+  }
+}

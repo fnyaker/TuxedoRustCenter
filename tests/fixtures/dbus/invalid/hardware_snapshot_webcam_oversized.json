@@ -1,0 +1,2240 @@
+{
+  "webcam": {
+    "switchAvailable": true,
+    "controlsWritable": false,
+    "enabled": true,
+    "controlsSupported": true,
+    "controlsTruncated": true,
+    "devices": [
+      {
+        "name": "Oversized Camera",
+        "devicePath": "/dev/video0",
+        "deviceName": "Oversized Camera",
+        "index": 0,
+        "metadata": false,
+        "identity": {
+          "vendor": "ffff",
+          "product": "0001",
+          "serial": null,
+          "fallbackName": "Oversized Camera"
+        },
+        "busInfo": "usb-0000:00:14.0-9",
+        "controls": [
+          {
+            "key": "power_line_frequency",
+            "name": "Power Line Frequency",
+            "kind": "menu",
+            "min": 0,
+            "max": 128,
+            "step": 1,
+            "default": 0,
+            "current": {
+              "kind": "menu",
+              "index": 0,
+              "key": "entry_0",
+              "label": "Entry 0"
+            },
+            "menu": [
+              {
+                "index": 0,
+                "key": "entry_0",
+                "label": "Entry 0"
+              },
+              {
+                "index": 1,
+                "key": "entry_1",
+                "label": "Entry 1"
+              },
+              {
+                "index": 2,
+                "key": "entry_2",
+                "label": "Entry 2"
+              },
+              {
+                "index": 3,
+                "key": "entry_3",
+                "label": "Entry 3"
+              },
+              {
+                "index": 4,
+                "key": "entry_4",
+                "label": "Entry 4"
+              },
+              {
+                "index": 5,
+                "key": "entry_5",
+                "label": "Entry 5"
+              },
+              {
+                "index": 6,
+                "key": "entry_6",
+                "label": "Entry 6"
+              },
+              {
+                "index": 7,
+                "key": "entry_7",
+                "label": "Entry 7"
+              },
+              {
+                "index": 8,
+                "key": "entry_8",
+                "label": "Entry 8"
+              },
+              {
+                "index": 9,
+                "key": "entry_9",
+                "label": "Entry 9"
+              },
+              {
+                "index": 10,
+                "key": "entry_10",
+                "label": "Entry 10"
+              },
+              {
+                "index": 11,
+                "key": "entry_11",
+                "label": "Entry 11"
+              },
+              {
+                "index": 12,
+                "key": "entry_12",
+                "label": "Entry 12"
+              },
+              {
+                "index": 13,
+                "key": "entry_13",
+                "label": "Entry 13"
+              },
+              {
+                "index": 14,
+                "key": "entry_14",
+                "label": "Entry 14"
+              },
+              {
+                "index": 15,
+                "key": "entry_15",
+                "label": "Entry 15"
+              },
+              {
+                "index": 16,
+                "key": "entry_16",
+                "label": "Entry 16"
+              },
+              {
+                "index": 17,
+                "key": "entry_17",
+                "label": "Entry 17"
+              },
+              {
+                "index": 18,
+                "key": "entry_18",
+                "label": "Entry 18"
+              },
+              {
+                "index": 19,
+                "key": "entry_19",
+                "label": "Entry 19"
+              },
+              {
+                "index": 20,
+                "key": "entry_20",
+                "label": "Entry 20"
+              },
+              {
+                "index": 21,
+                "key": "entry_21",
+                "label": "Entry 21"
+              },
+              {
+                "index": 22,
+                "key": "entry_22",
+                "label": "Entry 22"
+              },
+              {
+                "index": 23,
+                "key": "entry_23",
+                "label": "Entry 23"
+              },
+              {
+                "index": 24,
+                "key": "entry_24",
+                "label": "Entry 24"
+              },
+              {
+                "index": 25,
+                "key": "entry_25",
+                "label": "Entry 25"
+              },
+              {
+                "index": 26,
+                "key": "entry_26",
+                "label": "Entry 26"
+              },
+              {
+                "index": 27,
+                "key": "entry_27",
+                "label": "Entry 27"
+              },
+              {
+                "index": 28,
+                "key": "entry_28",
+                "label": "Entry 28"
+              },
+              {
+                "index": 29,
+                "key": "entry_29",
+                "label": "Entry 29"
+              },
+              {
+                "index": 30,
+                "key": "entry_30",
+                "label": "Entry 30"
+              },
+              {
+                "index": 31,
+                "key": "entry_31",
+                "label": "Entry 31"
+              },
+              {
+                "index": 32,
+                "key": "entry_32",
+                "label": "Entry 32"
+              },
+              {
+                "index": 33,
+                "key": "entry_33",
+                "label": "Entry 33"
+              },
+              {
+                "index": 34,
+                "key": "entry_34",
+                "label": "Entry 34"
+              },
+              {
+                "index": 35,
+                "key": "entry_35",
+                "label": "Entry 35"
+              },
+              {
+                "index": 36,
+                "key": "entry_36",
+                "label": "Entry 36"
+              },
+              {
+                "index": 37,
+                "key": "entry_37",
+                "label": "Entry 37"
+              },
+              {
+                "index": 38,
+                "key": "entry_38",
+                "label": "Entry 38"
+              },
+              {
+                "index": 39,
+                "key": "entry_39",
+                "label": "Entry 39"
+              },
+              {
+                "index": 40,
+                "key": "entry_40",
+                "label": "Entry 40"
+              },
+              {
+                "index": 41,
+                "key": "entry_41",
+                "label": "Entry 41"
+              },
+              {
+                "index": 42,
+                "key": "entry_42",
+                "label": "Entry 42"
+              },
+              {
+                "index": 43,
+                "key": "entry_43",
+                "label": "Entry 43"
+              },
+              {
+                "index": 44,
+                "key": "entry_44",
+                "label": "Entry 44"
+              },
+              {
+                "index": 45,
+                "key": "entry_45",
+                "label": "Entry 45"
+              },
+              {
+                "index": 46,
+                "key": "entry_46",
+                "label": "Entry 46"
+              },
+              {
+                "index": 47,
+                "key": "entry_47",
+                "label": "Entry 47"
+              },
+              {
+                "index": 48,
+                "key": "entry_48",
+                "label": "Entry 48"
+              },
+              {
+                "index": 49,
+                "key": "entry_49",
+                "label": "Entry 49"
+              },
+              {
+                "index": 50,
+                "key": "entry_50",
+                "label": "Entry 50"
+              },
+              {
+                "index": 51,
+                "key": "entry_51",
+                "label": "Entry 51"
+              },
+              {
+                "index": 52,
+                "key": "entry_52",
+                "label": "Entry 52"
+              },
+              {
+                "index": 53,
+                "key": "entry_53",
+                "label": "Entry 53"
+              },
+              {
+                "index": 54,
+                "key": "entry_54",
+                "label": "Entry 54"
+              },
+              {
+                "index": 55,
+                "key": "entry_55",
+                "label": "Entry 55"
+              },
+              {
+                "index": 56,
+                "key": "entry_56",
+                "label": "Entry 56"
+              },
+              {
+                "index": 57,
+                "key": "entry_57",
+                "label": "Entry 57"
+              },
+              {
+                "index": 58,
+                "key": "entry_58",
+                "label": "Entry 58"
+              },
+              {
+                "index": 59,
+                "key": "entry_59",
+                "label": "Entry 59"
+              },
+              {
+                "index": 60,
+                "key": "entry_60",
+                "label": "Entry 60"
+              },
+              {
+                "index": 61,
+                "key": "entry_61",
+                "label": "Entry 61"
+              },
+              {
+                "index": 62,
+                "key": "entry_62",
+                "label": "Entry 62"
+              },
+              {
+                "index": 63,
+                "key": "entry_63",
+                "label": "Entry 63"
+              },
+              {
+                "index": 64,
+                "key": "entry_64",
+                "label": "Entry 64"
+              },
+              {
+                "index": 65,
+                "key": "entry_65",
+                "label": "Entry 65"
+              },
+              {
+                "index": 66,
+                "key": "entry_66",
+                "label": "Entry 66"
+              },
+              {
+                "index": 67,
+                "key": "entry_67",
+                "label": "Entry 67"
+              },
+              {
+                "index": 68,
+                "key": "entry_68",
+                "label": "Entry 68"
+              },
+              {
+                "index": 69,
+                "key": "entry_69",
+                "label": "Entry 69"
+              },
+              {
+                "index": 70,
+                "key": "entry_70",
+                "label": "Entry 70"
+              },
+              {
+                "index": 71,
+                "key": "entry_71",
+                "label": "Entry 71"
+              },
+              {
+                "index": 72,
+                "key": "entry_72",
+                "label": "Entry 72"
+              },
+              {
+                "index": 73,
+                "key": "entry_73",
+                "label": "Entry 73"
+              },
+              {
+                "index": 74,
+                "key": "entry_74",
+                "label": "Entry 74"
+              },
+              {
+                "index": 75,
+                "key": "entry_75",
+                "label": "Entry 75"
+              },
+              {
+                "index": 76,
+                "key": "entry_76",
+                "label": "Entry 76"
+              },
+              {
+                "index": 77,
+                "key": "entry_77",
+                "label": "Entry 77"
+              },
+              {
+                "index": 78,
+                "key": "entry_78",
+                "label": "Entry 78"
+              },
+              {
+                "index": 79,
+                "key": "entry_79",
+                "label": "Entry 79"
+              },
+              {
+                "index": 80,
+                "key": "entry_80",
+                "label": "Entry 80"
+              },
+              {
+                "index": 81,
+                "key": "entry_81",
+                "label": "Entry 81"
+              },
+              {
+                "index": 82,
+                "key": "entry_82",
+                "label": "Entry 82"
+              },
+              {
+                "index": 83,
+                "key": "entry_83",
+                "label": "Entry 83"
+              },
+              {
+                "index": 84,
+                "key": "entry_84",
+                "label": "Entry 84"
+              },
+              {
+                "index": 85,
+                "key": "entry_85",
+                "label": "Entry 85"
+              },
+              {
+                "index": 86,
+                "key": "entry_86",
+                "label": "Entry 86"
+              },
+              {
+                "index": 87,
+                "key": "entry_87",
+                "label": "Entry 87"
+              },
+              {
+                "index": 88,
+                "key": "entry_88",
+                "label": "Entry 88"
+              },
+              {
+                "index": 89,
+                "key": "entry_89",
+                "label": "Entry 89"
+              },
+              {
+                "index": 90,
+                "key": "entry_90",
+                "label": "Entry 90"
+              },
+              {
+                "index": 91,
+                "key": "entry_91",
+                "label": "Entry 91"
+              },
+              {
+                "index": 92,
+                "key": "entry_92",
+                "label": "Entry 92"
+              },
+              {
+                "index": 93,
+                "key": "entry_93",
+                "label": "Entry 93"
+              },
+              {
+                "index": 94,
+                "key": "entry_94",
+                "label": "Entry 94"
+              },
+              {
+                "index": 95,
+                "key": "entry_95",
+                "label": "Entry 95"
+              },
+              {
+                "index": 96,
+                "key": "entry_96",
+                "label": "Entry 96"
+              },
+              {
+                "index": 97,
+                "key": "entry_97",
+                "label": "Entry 97"
+              },
+              {
+                "index": 98,
+                "key": "entry_98",
+                "label": "Entry 98"
+              },
+              {
+                "index": 99,
+                "key": "entry_99",
+                "label": "Entry 99"
+              },
+              {
+                "index": 100,
+                "key": "entry_100",
+                "label": "Entry 100"
+              },
+              {
+                "index": 101,
+                "key": "entry_101",
+                "label": "Entry 101"
+              },
+              {
+                "index": 102,
+                "key": "entry_102",
+                "label": "Entry 102"
+              },
+              {
+                "index": 103,
+                "key": "entry_103",
+                "label": "Entry 103"
+              },
+              {
+                "index": 104,
+                "key": "entry_104",
+                "label": "Entry 104"
+              },
+              {
+                "index": 105,
+                "key": "entry_105",
+                "label": "Entry 105"
+              },
+              {
+                "index": 106,
+                "key": "entry_106",
+                "label": "Entry 106"
+              },
+              {
+                "index": 107,
+                "key": "entry_107",
+                "label": "Entry 107"
+              },
+              {
+                "index": 108,
+                "key": "entry_108",
+                "label": "Entry 108"
+              },
+              {
+                "index": 109,
+                "key": "entry_109",
+                "label": "Entry 109"
+              },
+              {
+                "index": 110,
+                "key": "entry_110",
+                "label": "Entry 110"
+              },
+              {
+                "index": 111,
+                "key": "entry_111",
+                "label": "Entry 111"
+              },
+              {
+                "index": 112,
+                "key": "entry_112",
+                "label": "Entry 112"
+              },
+              {
+                "index": 113,
+                "key": "entry_113",
+                "label": "Entry 113"
+              },
+              {
+                "index": 114,
+                "key": "entry_114",
+                "label": "Entry 114"
+              },
+              {
+                "index": 115,
+                "key": "entry_115",
+                "label": "Entry 115"
+              },
+              {
+                "index": 116,
+                "key": "entry_116",
+                "label": "Entry 116"
+              },
+              {
+                "index": 117,
+                "key": "entry_117",
+                "label": "Entry 117"
+              },
+              {
+                "index": 118,
+                "key": "entry_118",
+                "label": "Entry 118"
+              },
+              {
+                "index": 119,
+                "key": "entry_119",
+                "label": "Entry 119"
+              },
+              {
+                "index": 120,
+                "key": "entry_120",
+                "label": "Entry 120"
+              },
+              {
+                "index": 121,
+                "key": "entry_121",
+                "label": "Entry 121"
+              },
+              {
+                "index": 122,
+                "key": "entry_122",
+                "label": "Entry 122"
+              },
+              {
+                "index": 123,
+                "key": "entry_123",
+                "label": "Entry 123"
+              },
+              {
+                "index": 124,
+                "key": "entry_124",
+                "label": "Entry 124"
+              },
+              {
+                "index": 125,
+                "key": "entry_125",
+                "label": "Entry 125"
+              },
+              {
+                "index": 126,
+                "key": "entry_126",
+                "label": "Entry 126"
+              },
+              {
+                "index": 127,
+                "key": "entry_127",
+                "label": "Entry 127"
+              },
+              {
+                "index": 128,
+                "key": "entry_128",
+                "label": "Entry 128"
+              }
+            ],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "advanced",
+            "simple": false
+          },
+          {
+            "key": "brightness_1",
+            "name": "Brightness 1",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_2",
+            "name": "Brightness 2",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_3",
+            "name": "Brightness 3",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_4",
+            "name": "Brightness 4",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_5",
+            "name": "Brightness 5",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_6",
+            "name": "Brightness 6",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_7",
+            "name": "Brightness 7",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_8",
+            "name": "Brightness 8",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_9",
+            "name": "Brightness 9",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_10",
+            "name": "Brightness 10",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_11",
+            "name": "Brightness 11",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_12",
+            "name": "Brightness 12",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_13",
+            "name": "Brightness 13",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_14",
+            "name": "Brightness 14",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_15",
+            "name": "Brightness 15",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_16",
+            "name": "Brightness 16",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_17",
+            "name": "Brightness 17",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_18",
+            "name": "Brightness 18",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_19",
+            "name": "Brightness 19",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_20",
+            "name": "Brightness 20",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_21",
+            "name": "Brightness 21",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_22",
+            "name": "Brightness 22",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_23",
+            "name": "Brightness 23",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_24",
+            "name": "Brightness 24",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_25",
+            "name": "Brightness 25",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_26",
+            "name": "Brightness 26",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_27",
+            "name": "Brightness 27",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_28",
+            "name": "Brightness 28",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_29",
+            "name": "Brightness 29",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_30",
+            "name": "Brightness 30",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_31",
+            "name": "Brightness 31",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_32",
+            "name": "Brightness 32",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_33",
+            "name": "Brightness 33",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_34",
+            "name": "Brightness 34",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_35",
+            "name": "Brightness 35",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_36",
+            "name": "Brightness 36",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_37",
+            "name": "Brightness 37",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_38",
+            "name": "Brightness 38",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_39",
+            "name": "Brightness 39",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_40",
+            "name": "Brightness 40",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_41",
+            "name": "Brightness 41",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_42",
+            "name": "Brightness 42",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_43",
+            "name": "Brightness 43",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_44",
+            "name": "Brightness 44",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_45",
+            "name": "Brightness 45",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_46",
+            "name": "Brightness 46",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_47",
+            "name": "Brightness 47",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_48",
+            "name": "Brightness 48",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_49",
+            "name": "Brightness 49",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_50",
+            "name": "Brightness 50",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_51",
+            "name": "Brightness 51",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_52",
+            "name": "Brightness 52",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_53",
+            "name": "Brightness 53",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_54",
+            "name": "Brightness 54",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_55",
+            "name": "Brightness 55",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_56",
+            "name": "Brightness 56",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_57",
+            "name": "Brightness 57",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_58",
+            "name": "Brightness 58",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_59",
+            "name": "Brightness 59",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_60",
+            "name": "Brightness 60",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_61",
+            "name": "Brightness 61",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_62",
+            "name": "Brightness 62",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_63",
+            "name": "Brightness 63",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          },
+          {
+            "key": "brightness_64",
+            "name": "Brightness 64",
+            "kind": "integer",
+            "min": 0,
+            "max": 255,
+            "step": 1,
+            "default": 128,
+            "current": {
+              "kind": "integer",
+              "value": 128
+            },
+            "menu": [],
+            "flags": {
+              "inactive": false,
+              "readOnly": true,
+              "writeOnly": false,
+              "update": false,
+              "disabled": false,
+              "grabbed": false
+            },
+            "category": "basic",
+            "simple": true
+          }
+        ],
+        "controlsError": null
+      }
+    ],
+    "applied": true,
+    "errors": [
+      "contrôles tronqués"
+    ]
+  }
+}

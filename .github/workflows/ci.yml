@@ -93,16 +93,17 @@ jobs:
       - run: cargo clippy -p tcc-authz -p tcc-admin --all-targets --locked -- -D warnings
 
   qml:
-    # Ubuntu 24.04 ne fournit que Qt 6.4 (sans QtQuick.Effects, requis par les
-    # composants) : les tests QML tournent dans un conteneur Arch qui fournit
-    # Qt 6.10+, les modules QML et `qmltestrunner` dans un seul paquet.
+    # Ubuntu 24.04 ne fournit que Qt 6.4 : les tests QML tournent dans un
+    # conteneur Arch qui fournit Qt 6.10+, les modules QML et
+    # `qmltestrunner` dans un seul paquet. `qt6-5compat` est requis par
+    # AppIcon (ColorOverlay), choix imposé par la cible .deb Qt 6.4.
     name: QML (Qt Quick Test, Arch)
     runs-on: ubuntu-latest
     container: archlinux:latest
     timeout-minutes: 20
     steps:
-      - name: Installer Qt 6 (QML, SVG, outils de test)
-        run: pacman -Syu --noconfirm --needed qt6-declarative qt6-svg
+      - name: Installer Qt 6 (QML, SVG, compat, outils de test)
+        run: pacman -Syu --noconfirm --needed qt6-declarative qt6-svg qt6-5compat
       - uses: actions/checkout@v4
       - name: Vérifier Qt 6
         run: |
@@ -115,6 +116,9 @@ jobs:
         run: sh crates/tcc-gui/tools/qml-check.sh
 
   test-arch:
+    # Les tests s'exécutent en utilisateur non privilégié, comme sur les
+    # runners Ubuntu : certains vérifient le refus d'exécution en root
+    # (`tccd-user`). Le conteneur démarre en root, d'où l'utilisateur dédié.
     name: Tests (Arch Linux, sans Qt)
     runs-on: ubuntu-latest
     container: archlinux:latest
@@ -122,11 +126,19 @@ jobs:
       - name: Installer Rust
         run: pacman -Syu --noconfirm --needed rust
       - uses: actions/checkout@v4
-      - run: |
-          cargo test --locked -p tcc-core -p tcc-ipc -p tcc-authz -p tcc-admin \
-            -p tcc-hw -p tcc-user -p tcc-cli
+      - name: Utilisateur de test (non-root)
+        run: |
+          useradd -m tester
+          chown -R tester:tester "$GITHUB_WORKSPACE"
+      - name: Tests crates sans Qt
+        run: |
+          su tester -c "cd '$GITHUB_WORKSPACE' && cargo test --locked \
+            -p tcc-core -p tcc-ipc -p tcc-authz -p tcc-admin \
+            -p tcc-hw -p tcc-user -p tcc-cli"
       - name: Crates sans Qt (daemon sur bus de session)
-        run: pacman -S --noconfirm --needed dbus && dbus-run-session -- cargo test --locked -p tcc-daemon
+        run: |
+          pacman -S --noconfirm --needed dbus
+          su tester -c "cd '$GITHUB_WORKSPACE' && dbus-run-session -- cargo test --locked -p tcc-daemon"
 
   msrv:
     name: MSRV 1.85
@@ -174,9 +186,16 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      # `audit-check` publie le résultat via l'API de check runs.
+      checks: write
       issues: write
     steps:
       - uses: actions/checkout@v4
       - uses: rustsec/audit-check@v2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+          # zbus 5.x embarque les crates zvariant/zbus_names, marquées
+          # « unmaintained » depuis leur fusion dans zbus 6.0 (RUSTSEC-2026-0370
+          # à 0372). Aucune faille connue ; le passage à zbus 6 est suivi
+          # séparément. Les mises à jour restent signalées par cargo-deny.
+          ignore: RUSTSEC-2026-0370,RUSTSEC-2026-0371,RUSTSEC-2026-0372

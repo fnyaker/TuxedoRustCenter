@@ -17,7 +17,15 @@ all-features = true
 
 [advisories]
 yanked = "deny"
-ignore = []
+# zbus 5.x embarque `zvariant`, `zvariant_derive` et `zbus_names`, marquées
+# « unmaintained » depuis leur fusion dans zbus 6.0 (RUSTSEC-2026-0370 à 0372,
+# aucune vulnérabilité). Migration vers zbus 6 suivie séparément ; retirer ces
+# entrées dès qu'elle est faite.
+ignore = [
+    "RUSTSEC-2026-0370",
+    "RUSTSEC-2026-0371",
+    "RUSTSEC-2026-0372",
+]
 
 [licenses]
 allow = [
@@ -42,6 +50,10 @@ confidence-threshold = 0.9
 [bans]
 multiple-versions = "warn"
 wildcards = "deny"
+# Les dépendances entre crates du workspace sont des dépendances de chemin
+# sans version (`{ path = "../tcc-core" }`) : ce ne sont pas des wildcards de
+# registre. Les wildcards restent refusés pour les crates publiées.
+allow-wildcard-paths = true
 highlight = "all"
 
 [sources]

@@ -11,6 +11,12 @@ name: Release packages
 # `[workspace.package].version` de `Cargo.toml`, pour éviter des paquets
 # mal étiquetés.
 #
+# NOTE Qt 6.4 : Ubuntu 24.04 (noble) fournit Qt 6.4.2, qui n'a pas
+# `QtQuick.Effects` (Qt >= 6.5). `AppIcon.qml` utilise donc `ColorOverlay` de
+# `Qt5Compat.GraphicalEffects` (`qml6-module-qt5compat-graphicaleffects`),
+# disponible sur les trois cibles. Ne pas réintroduire QtQuick.Effects sans
+# relever la cible .deb.
+#
 # NOTE supply-chain (REVIEW_JALON1 R-23) : les actions sont référencées par tag
 # pour rester maintenables. Le passage à des SHA de commit est suivi par
 # `security`/`qa-integration` ; ne pas ajouter d'action non officielle ici.
@@ -208,6 +214,16 @@ jobs:
             desktop-file-utils appstream libxml2-utils python3 \
             qt6-declarative-dev-tools libcap2-bin
           deb=$(ls /tmp/pkg/*.deb)
+          # Simulation avant installation : message explicite si la cible ne
+          # fournit pas une dépendance (paquet renommé, module QML absent).
+          if ! apt-get install -s --no-install-recommends "$deb" >/tmp/deb-sim.txt 2>&1; then
+            cat /tmp/deb-sim.txt >&2
+            printf '%s\n' \
+              'Dépendance non installable sur Ubuntu 24.04 (noble).' \
+              'Vérifier distro/deb/control.in et la disponibilité des modules QML' \
+              'dans noble (Qt 6.4.2) ; voir docs/packaging/README.md section 5.2.' >&2
+            exit 1
+          fi
           apt-get install -y --no-install-recommends "$deb"
 
           # Chemins FHS exacts
@@ -249,7 +265,7 @@ jobs:
           ! grep -qE 'QQmlApplicationEngine failed|Main.qml introuvable|is not a type|Unsupported image format|is not installed' /tmp/gui.log
 
           # Imports QML de l'arborescence installée (Qt.labs.platform,
-          # QtQuick.Dialogs, QtQuick.Effects, QtQml.Models, ...).
+          # QtQuick.Dialogs, Qt5Compat.GraphicalEffects, QtQml.Models, ...).
           scanner=$(command -v qmlimportscanner || find /usr/lib/qt6 -name qmlimportscanner -type f | head -1)
           "$scanner" -rootPath /usr/share/tuxedo-rust-center/qml \
             -importPath /usr/lib/x86_64-linux-gnu/qt6/qml > /tmp/qml-imports.json
@@ -257,7 +273,7 @@ jobs:
           import json, sys
           required = {
               "QtCore", "Qt.labs.platform", "QtQml.Models", "QtQuick",
-              "QtQuick.Controls", "QtQuick.Dialogs", "QtQuick.Effects",
+              "QtQuick.Controls", "QtQuick.Dialogs", "Qt5Compat.GraphicalEffects",
               "QtQuick.Layouts", "QtQuick.Shapes", "QtQuick.Window",
           }
           data = json.load(open("/tmp/qml-imports.json"))

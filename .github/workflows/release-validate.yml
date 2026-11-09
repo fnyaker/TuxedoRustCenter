@@ -36,7 +36,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
-            systemd systemd-udev udev dbus dbus-daemon dbus-tools desktop-file-utils appstream libxml2-utils shellcheck
+            systemd udev dbus dbus-daemon desktop-file-utils appstream libxml2-utils shellcheck
 
       - name: Shellcheck des scripts de release
         run: shellcheck -x -S warning scripts/release/*.sh distro/deb/postinst distro/deb/prerm distro/deb/postrm distro/arch/tuxedo-rust-center.install

@@ -136,8 +136,7 @@ TCC_VALIDATE_STRICT=0 scripts/release/validate.sh --tree %{buildroot}
 %{_udevrulesdir}/99-tuxedo-rust-center-webcam.rules
 %{_tmpfilesdir}/tuxedo-rust-center.conf
 %{_datadir}/applications/tuxedo-rust-center.desktop
-%{_datadir}/icons/hicolor/scalable/apps/tuxedo-rust-center.svg
-%{_datadir}/icons/hicolor/256x256/apps/tuxedo-rust-center.png
+%{_datadir}/icons/hicolor/*/apps/tuxedo-rust-center.*
 %{_datadir}/metainfo/com.tuxedocomputers.TuxedoRustCenter.metainfo.xml
 %{_datadir}/tuxedo-rust-center/qml
 %{_datadir}/tuxedo-rust-center/assets

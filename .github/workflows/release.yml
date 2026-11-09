@@ -216,7 +216,10 @@ jobs:
           apt-get install -y --no-install-recommends systemd dbus \
             desktop-file-utils appstream libxml2-utils python3 \
             qt6-declarative-dev-tools libcap2-bin
-          deb=$(ls /tmp/pkg/*.deb)
+          # upload-artifact conserve l'arborescence relative
+          # (packages/nom.deb) : chercher récursivement.
+          deb=$(find /tmp/pkg -name '*.deb' -type f | head -1)
+          test -n "$deb"
           # Simulation avant installation : message explicite si la cible ne
           # fournit pas une dépendance (paquet renommé, module QML absent).
           if ! apt-get install -s --no-install-recommends "$deb" >/tmp/deb-sim.txt 2>&1; then
@@ -355,7 +358,7 @@ jobs:
             fi
           done
           # Les paquets Qt 6 et les outils RPM doivent exister sur l'image.
-          rpm -q qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qtsvg-devel qt6-qt5compat \
+          rpm -q qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qtsvg-devel \
             rpm-build rpmlint systemd-rpm-macros desktop-file-utils appstream
 
       - name: Spec conditionnel admin (sans binaire)
@@ -496,6 +499,12 @@ jobs:
           pkg=$(ls build/packages/*.pkg.tar.zst)
           out=$(namcap "$pkg" || true)
           printf '%s\n' "$out"
+          # namcap considère /usr/libexec comme hors chemin ELF valide ; c'est
+          # pourtant le chemin FHS retenu pour les binaires non destinés au
+          # PATH (comme systemd). On ignore uniquement ce message précis.
+          out=$(printf '%s\n' "$out" \
+            | grep -vE "ELF file \('usr/libexec/tuxedo-rust-center/[^']+'\) outside of a valid path" \
+            || true)
           ! printf '%s\n' "$out" | grep -E ' E: '
 
       - name: Inspection de l'archive
@@ -555,6 +564,10 @@ jobs:
       - name: Vérifier la présence de tous les artefacts
         run: |
           set -euo pipefail
+          # Les artefacts conservent l'arborescence relative du job
+          # (packages/...) : aplatir avant les contrôles et les sommes.
+          find dist -mindepth 2 -type f -exec mv -f {} dist/ \;
+          find dist -mindepth 1 -type d -empty -delete
           manquant=0
           for motif in '*.deb' '*.rpm' '*.pkg.tar.zst' '*.tar.gz'; do
             if ! compgen -G "dist/$motif" >/dev/null; then

@@ -102,6 +102,9 @@ jobs:
       - name: Horodatage reproductible
         run: |
           set -euo pipefail
+          # Les jobs en conteneur montent l'espace de travail avec un autre UID :
+          # git refuse alors le dépôt (« dubious ownership »).
+          git config --global --add safe.directory "$GITHUB_WORKSPACE" 2>/dev/null || true
           epoch=$(git -C "$GITHUB_WORKSPACE" log -1 --format=%ct)
           case "$epoch" in
             ''|*[!0-9]*) printf 'horodatage git invalide: %s\n' "$epoch" >&2; exit 1 ;;
@@ -331,6 +334,9 @@ jobs:
       - name: Horodatage reproductible
         run: |
           set -euo pipefail
+          # Les jobs en conteneur montent l'espace de travail avec un autre UID :
+          # git refuse alors le dépôt (« dubious ownership »).
+          git config --global --add safe.directory "$GITHUB_WORKSPACE" 2>/dev/null || true
           epoch=$(git -C "$GITHUB_WORKSPACE" log -1 --format=%ct)
           case "$epoch" in
             ''|*[!0-9]*) printf 'horodatage git invalide: %s\n' "$epoch" >&2; exit 1 ;;
@@ -452,6 +458,9 @@ jobs:
       - name: Horodatage reproductible
         run: |
           set -euo pipefail
+          # Les jobs en conteneur montent l'espace de travail avec un autre UID :
+          # git refuse alors le dépôt (« dubious ownership »).
+          git config --global --add safe.directory "$GITHUB_WORKSPACE" 2>/dev/null || true
           epoch=$(git -C "$GITHUB_WORKSPACE" log -1 --format=%ct)
           case "$epoch" in
             ''|*[!0-9]*) printf 'horodatage git invalide: %s\n' "$epoch" >&2; exit 1 ;;

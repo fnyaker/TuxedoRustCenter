@@ -5,6 +5,14 @@ Rust stable, Qt 6.12. Les tests Debian sont exécutés dans des conteneurs
 `debian:trixie` (Docker), les tests Fedora/Arch dans `fedora:latest` et
 `archlinux:latest`.
 
+> Depuis le 2026-11-09, la CI de release (`.github/workflows/release.yml`)
+> cible **Ubuntu 24.04 LTS (`noble`)** pour le `.deb` (runner `ubuntu-24.04`,
+> installation dans `ubuntu:24.04`), Fedora via `RPM_IMAGE` (défaut
+> `fedora:latest`) et Arch via `ARCH_IMAGE` (défaut `archlinux:latest`). Les
+> validations `debian:trixie` ci-dessous restent des preuves historiques
+> (jalon 1/2) ; les jobs `deb-install` et le changelog `noble` font foi pour
+> la publication.
+
 Ce rapport liste ce qui a été **réellement exécuté**, pas seulement ce qui est
 prévu par la CI. Les points non testables localement sont explicitement
 marqués.

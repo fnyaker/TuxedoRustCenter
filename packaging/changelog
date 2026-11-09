@@ -1,4 +1,4 @@
-tuxedo-rust-center (0.1.0-1) unstable; urgency=medium
+tuxedo-rust-center (0.1.0-1) noble; urgency=medium
 
   * Premier paquet installable (jalon 1/2) : binaires tccd, tccd-user,
     tuxedo-rust-center et tcc-cli, units systemd système et utilisateur,

@@ -79,6 +79,9 @@ jobs:
           ! grep -rn 'tccd-sleep\.service"' scripts/release/install-tree.sh
           test ! -e packaging/systemd/tccd-sleep.service
           test -f packaging/systemd/tccd-sleep.service.example
+          # Aucun chemin propre à une machine (home utilisateur) dans les
+          # fichiers livrés ou les scripts de release.
+          ! grep -rInE '/home/[A-Za-z0-9._-]+' packaging distro scripts/release
           # Admin.Hw (phase 2) : pas d'installation par --with-admin.
           ! awk '/^if \[ "\$WITH_ADMIN" = "1" \]; then$/{f=1} f{print} f&&/^fi$/{f=0}' \
               scripts/release/install-tree.sh | grep -q 'tccd-admin-hw'

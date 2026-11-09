@@ -10,6 +10,7 @@
 # Variables :
 #   TCC_ARCH            architecture Debian (défaut: dpkg --print-architecture)
 #   TCC_DEB_REVISION    révision Debian (défaut: 1)
+#   TCC_DEB_DISTRIBUTION distribution du changelog (défaut: noble, Ubuntu 24.04)
 #   TCC_BUILD_DIR       répertoire de build (défaut: <repo>/build)
 
 set -euo pipefail
@@ -33,6 +34,13 @@ PKGROOT=${1:-"$BUILD_DIR/pkgroot"}
 OUTDIR=${2:-"$BUILD_DIR/packages"}
 ARCH=${TCC_ARCH:-$(dpkg --print-architecture)}
 REVISION=${TCC_DEB_REVISION:-1}
+# Distribution visée par le paquet de release : Ubuntu 24.04 LTS (noble).
+# Le changelog embarqué est normalisé sur cette valeur pour que lintian et
+# `apt` ne voient jamais une distribution Debian inattendue.
+DEB_DISTRIBUTION=${TCC_DEB_DISTRIBUTION:-noble}
+case "$DEB_DISTRIBUTION" in
+    ''|*[!a-z0-9._-]*) tcc_die "distribution Debian invalide: $DEB_DISTRIBUTION" ;;
+esac
 DEB_VERSION="$VERSION-$REVISION"
 
 [ -d "$PKGROOT" ] || tcc_die "arborescence absente: $PKGROOT (lancer install-tree.sh)"
@@ -71,6 +79,22 @@ chmod 0644 "$deb_control/conffiles"
 # .deb le renomme pour éviter `duplicate-changelog-files`.
 mv "$root/usr/share/doc/tuxedo-rust-center/changelog.gz" \
     "$root/usr/share/doc/tuxedo-rust-center/changelog.Debian.gz"
+
+# Normalisation de la distribution du changelog sur la cible du paquet
+# (noble = Ubuntu 24.04 LTS). Le fichier source est partagé avec rpm/Arch ;
+# seule la copie embarquée dans le .deb est réécrite. `gzip -9n` conserve la
+# reproductibilité (aucun horodatage dans l'archive).
+changelog_deb="$root/usr/share/doc/tuxedo-rust-center/changelog.Debian.gz"
+changelog_plain="$work/changelog.Debian"
+gzip -dc "$changelog_deb" > "$changelog_plain"
+sed -E -i \
+    -e "1s/^([^()]*)\(([^()]*)\)[[:space:]]+[^;]+;/\1(\2) $DEB_DISTRIBUTION;/" \
+    "$changelog_plain"
+first_line=$(sed -n '1p' "$changelog_plain")
+if ! printf '%s\n' "$first_line" | grep -qF ") $DEB_DISTRIBUTION;"; then
+    tcc_die "changelog Debian non normalisé en $DEB_DISTRIBUTION: $first_line"
+fi
+gzip -9n -c "$changelog_plain" > "$changelog_deb"
 
 install -m 0755 "$REPO_ROOT/distro/deb/postinst" "$deb_control/postinst"
 install -m 0755 "$REPO_ROOT/distro/deb/prerm" "$deb_control/prerm"

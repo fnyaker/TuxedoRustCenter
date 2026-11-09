@@ -1,8 +1,20 @@
 name: Release packages
 
+# Cibles de publication, déclenchées par un tag `v<version>` :
+#   - .deb  : Ubuntu 24.04 LTS (noble), construit sur le runner `ubuntu-24.04`
+#             et installé/testé dans le conteneur `ubuntu:24.04` ;
+#   - .rpm  : Fedora, image paramétrable par la variable de dépôt `RPM_IMAGE`
+#             (repli `fedora:latest`) ;
+#   - Arch  : Arch Linux, image paramétrable par `ARCH_IMAGE`
+#             (repli `archlinux:latest`), build non-root via `makepkg`.
+# Le job `version-check` refuse un tag qui ne correspond pas exactement à
+# `[workspace.package].version` de `Cargo.toml`, pour éviter des paquets
+# mal étiquetés.
+#
 # NOTE supply-chain (REVIEW_JALON1 R-23) : les actions sont référencées par tag
 # pour rester maintenables. Le passage à des SHA de commit est suivi par
 # `security`/`qa-integration` ; ne pas ajouter d'action non officielle ici.
+# Aucun secret n'est requis hors `GITHUB_TOKEN` et la signature GPG optionnelle.
 
 on:
   push:
@@ -20,9 +32,47 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  version-check:
+    name: Tag = version du workspace
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+
+      - name: Comparer Cargo.toml et le tag
+        env:
+          TAG_NAME: ${{ github.ref_name }}
+          REF_TYPE: ${{ github.ref_type }}
+        run: |
+          set -euo pipefail
+          # shellcheck source=scripts/release/lib.sh
+          . scripts/release/lib.sh
+          version=$(tcc_version "$GITHUB_WORKSPACE")
+          if [ -z "$version" ]; then
+            printf 'version [workspace.package] introuvable dans Cargo.toml\n' >&2
+            exit 1
+          fi
+          printf 'version du workspace : %s\n' "$version"
+          if [ "${REF_TYPE:-}" = "tag" ]; then
+            if [ "$TAG_NAME" != "v$version" ]; then
+              printf 'tag %s != v%s (Cargo.toml)\n' "$TAG_NAME" "$version" >&2
+              exit 1
+            fi
+            printf 'tag cohérent : %s\n' "$TAG_NAME"
+          else
+            # Exécution manuelle sur une branche : aucun artefact publié
+            # (le job `release` exige un tag), la version reste informative.
+            printf 'exécution manuelle sur %s : pas de contrôle de tag\n' "${TAG_NAME:-?}"
+          fi
+
   build-deb:
-    name: Build .deb (Debian/Ubuntu)
-    runs-on: ubuntu-latest
+    name: Build .deb (Ubuntu 24.04 / noble)
+    needs: version-check
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
     steps:
       - name: Récupérer le dépôt
         uses: actions/checkout@v4
@@ -33,7 +83,7 @@ jobs:
       - name: Cache Cargo
         uses: Swatinem/rust-cache@v2
 
-      - name: Dépendances de build et de validation
+      - name: Dépendances de build et de validation (Ubuntu 24.04)
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
@@ -42,6 +92,15 @@ jobs:
             qt6-svg-dev libgl1-mesa-dev \
             dpkg-dev lintian desktop-file-utils appstream libxml2-utils \
             systemd systemd-udev udev dbus dbus-daemon
+
+      - name: Horodatage reproductible
+        run: |
+          set -euo pipefail
+          epoch=$(git -C "$GITHUB_WORKSPACE" log -1 --format=%ct)
+          case "$epoch" in
+            ''|*[!0-9]*) printf 'horodatage git invalide: %s\n' "$epoch" >&2; exit 1 ;;
+          esac
+          printf 'SOURCE_DATE_EPOCH=%s\n' "$epoch" >> "$GITHUB_ENV"
 
       - name: Build + arborescence + validation + .deb + source
         run: scripts/release/build.sh --source
@@ -126,10 +185,14 @@ jobs:
           if-no-files-found: error
 
   deb-install:
-    name: Test installation (.deb, Debian trixie)
-    needs: build-deb
-    runs-on: ubuntu-latest
-    container: debian:trixie
+    name: Test installation (.deb, Ubuntu 24.04)
+    needs: [version-check, build-deb]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    # Cible officielle du .deb : Ubuntu 24.04 LTS (noble). Ne pas remplacer
+    # par `ubuntu:latest` : les noms `t64` et les modules QML sont figés.
+    container: ubuntu:24.04
     steps:
       - name: Récupérer le .deb
         uses: actions/download-artifact@v4
@@ -142,7 +205,8 @@ jobs:
           set -e
           apt-get update
           apt-get install -y --no-install-recommends systemd dbus \
-            desktop-file-utils appstream libxml2-utils python3 qt6-declarative-dev
+            desktop-file-utils appstream libxml2-utils python3 \
+            qt6-declarative-dev-tools libcap2-bin
           deb=$(ls /tmp/pkg/*.deb)
           apt-get install -y --no-install-recommends "$deb"
 
@@ -161,6 +225,11 @@ jobs:
           test ! -e /opt/tuxedo-control-center
           test -f /usr/share/tuxedo-rust-center/qml/Main.qml
           test -f /etc/tuxedo-rust-center/README
+
+          # Le .deb cible Ubuntu 24.04 : la distribution du changelog doit
+          # être `noble` (normalisée par scripts/release/make-deb.sh).
+          zgrep -q ') noble;' \
+            /usr/share/doc/tuxedo-rust-center/changelog.Debian.gz
 
           # Units et intégration
           systemd-analyze verify /usr/lib/systemd/system/tccd.service
@@ -214,19 +283,58 @@ jobs:
 
   build-rpm:
     name: Build RPM (Fedora)
-    runs-on: ubuntu-latest
-    container: fedora:latest
+    needs: version-check
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    # Image du conteneur paramétrable par la variable de dépôt `RPM_IMAGE`
+    # (épingler un tag ou un digest ne demande aucune modification des
+    # étapes). `container:` n'accepte pas le contexte `env` : la même
+    # expression est répétée ci-dessous et exposée aux étapes via `env`.
+    env:
+      RPM_IMAGE: ${{ vars.RPM_IMAGE || 'fedora:latest' }}
+    container:
+      image: "${{ vars.RPM_IMAGE || 'fedora:latest' }}"
     steps:
+      - name: Préparer git (image minimale)
+        run: |
+          set -euo pipefail
+          dnf install -y --setopt=install_weak_deps=False git-core tar gzip
+
       - name: Récupérer le dépôt
         uses: actions/checkout@v4
 
       - name: Dépendances
         run: |
           dnf install -y --setopt=install_weak_deps=False \
-            cargo rust gcc gcc-c++ make tar gzip \
+            cargo rust gcc gcc-c++ make \
             qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qtsvg-devel \
             rpm-build rpmlint systemd-rpm-macros \
             desktop-file-utils appstream libxml2 systemd systemd-udev dbus dbus-daemon dbus-tools
+
+      - name: Horodatage reproductible
+        run: |
+          set -euo pipefail
+          epoch=$(git -C "$GITHUB_WORKSPACE" log -1 --format=%ct)
+          case "$epoch" in
+            ''|*[!0-9]*) printf 'horodatage git invalide: %s\n' "$epoch" >&2; exit 1 ;;
+          esac
+          printf 'SOURCE_DATE_EPOCH=%s\n' "$epoch" >> "$GITHUB_ENV"
+
+      - name: Vérifier l'image et les outils
+        run: |
+          set -euo pipefail
+          printf 'image RPM : %s\n' "${RPM_IMAGE:-inconnue}"
+          cat /etc/fedora-release
+          for cmd in rpm rpmbuild rpmspec rpmlint dnf cargo; do
+            if ! command -v "$cmd" >/dev/null 2>&1; then
+              printf 'outil manquant: %s\n' "$cmd" >&2
+              exit 1
+            fi
+          done
+          # Les paquets Qt 6 et les outils RPM doivent exister sur l'image.
+          rpm -q qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qtsvg-devel \
+            rpm-build rpmlint systemd-rpm-macros desktop-file-utils appstream
 
       - name: Spec conditionnel admin (sans binaire)
         run: |
@@ -299,9 +407,23 @@ jobs:
 
   build-arch:
     name: Build Arch Linux
-    runs-on: ubuntu-latest
-    container: archlinux:latest
+    needs: version-check
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    # Image paramétrable par `ARCH_IMAGE` (même remarque que `RPM_IMAGE` :
+    # `container:` n'accepte pas `env`, l'expression est répétée).
+    env:
+      ARCH_IMAGE: ${{ vars.ARCH_IMAGE || 'archlinux:latest' }}
+    container:
+      image: "${{ vars.ARCH_IMAGE || 'archlinux:latest' }}"
     steps:
+      - name: Préparer git (image minimale)
+        run: |
+          set -euo pipefail
+          pacman -Syu --noconfirm --needed archlinux-keyring
+          pacman -S --noconfirm --needed git tar gzip
+
       - name: Récupérer le dépôt
         uses: actions/checkout@v4
 
@@ -309,8 +431,29 @@ jobs:
         run: |
           pacman -Syu --noconfirm --needed base-devel rust \
             qt6-base qt6-declarative qt6-svg hicolor-icon-theme \
-            namcap desktop-file-utils appstream libxml2 systemd dbus \
-            git tar gzip sudo
+            namcap desktop-file-utils appstream libxml2 systemd dbus sudo
+
+      - name: Horodatage reproductible
+        run: |
+          set -euo pipefail
+          epoch=$(git -C "$GITHUB_WORKSPACE" log -1 --format=%ct)
+          case "$epoch" in
+            ''|*[!0-9]*) printf 'horodatage git invalide: %s\n' "$epoch" >&2; exit 1 ;;
+          esac
+          printf 'SOURCE_DATE_EPOCH=%s\n' "$epoch" >> "$GITHUB_ENV"
+
+      - name: Vérifier l'image et les outils
+        run: |
+          set -euo pipefail
+          printf 'image Arch : %s\n' "${ARCH_IMAGE:-inconnue}"
+          cat /etc/os-release
+          for cmd in makepkg namcap cargo pacman git; do
+            if ! command -v "$cmd" >/dev/null 2>&1; then
+              printf 'outil manquant: %s\n' "$cmd" >&2
+              exit 1
+            fi
+          done
+          pacman -Q qt6-base qt6-declarative qt6-svg namcap
 
       - name: Utilisateur de build (makepkg refuse root)
         run: |
@@ -320,7 +463,7 @@ jobs:
 
       - name: Build paquet Arch
         run: |
-          su builder -c "cd '$GITHUB_WORKSPACE' && TCC_BUILD_DIR='$GITHUB_WORKSPACE/build' scripts/release/make-arch.sh"
+          su builder -c "cd '$GITHUB_WORKSPACE' && SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH TCC_BUILD_DIR='$GITHUB_WORKSPACE/build' scripts/release/make-arch.sh"
 
       - name: namcap
         run: |
@@ -371,9 +514,9 @@ jobs:
 
   release:
     name: Publier la release
-    needs: [build-deb, deb-install, build-rpm, build-arch]
+    needs: [version-check, build-deb, deb-install, build-rpm, build-arch]
     if: startsWith(github.ref, 'refs/tags/v')
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
@@ -383,6 +526,21 @@ jobs:
           pattern: "*-package"
           path: dist
           merge-multiple: true
+
+      - name: Vérifier la présence de tous les artefacts
+        run: |
+          set -euo pipefail
+          manquant=0
+          for motif in '*.deb' '*.rpm' '*.pkg.tar.zst' '*.tar.gz'; do
+            if ! compgen -G "dist/$motif" >/dev/null; then
+              printf 'artefact manquant: %s\n' "$motif" >&2
+              manquant=1
+            fi
+          done
+          if [ "$manquant" -ne 0 ]; then
+            exit 1
+          fi
+          ls -l dist
 
       - name: Sommes de contrôle
         run: |
@@ -413,5 +571,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           gh release create "$GITHUB_REF_NAME" dist/* \
+            --verify-tag \
             --title "TuxedoRustCenter $GITHUB_REF_NAME" \
             --generate-notes

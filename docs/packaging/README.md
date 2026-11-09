@@ -165,7 +165,10 @@ par défaut.
 
 ## 4. Prérequis de build
 
-### Debian / Ubuntu
+### Debian / Ubuntu 24.04 LTS (`noble`)
+
+Cible officielle du `.deb`. Les noms `t64` et `qml6-module-*` ci-dessous sont
+ceux de `noble` ; vérifier à chaque changement de distribution cible.
 
 ```sh
 sudo apt-get install -y build-essential pkg-config cargo rustc \
@@ -174,7 +177,13 @@ sudo apt-get install -y build-essential pkg-config cargo rustc \
     dpkg-dev fakeroot lintian desktop-file-utils appstream libxml2-utils
 ```
 
+`qmlimportscanner` provient de `qt6-declarative-dev-tools` sur `noble` (et non
+de `qt6-declarative-dev`) ; la CI l'installe pour inspecter l'arborescence
+installée.
+
 ### Fedora
+
+Cible du `.rpm`. Image CI : `fedora:latest` (variable `RPM_IMAGE`).
 
 ```sh
 sudo dnf install -y cargo rust gcc gcc-c++ make \
@@ -263,6 +272,58 @@ cargo build --release --locked
 
 `install-tree.sh` refuse un binaire absent et n'ajoute jamais de feature.
 
+### 5.1 CI de release (GitHub Actions)
+
+`.github/workflows/release.yml` construit et publie les paquets à chaque tag
+`v<version>`. Un `workflow_dispatch` rejoue les builds sans publier (le job
+`release` exige un tag).
+
+| Cible | Runner / image | Artefact |
+|---|---|---|
+| **Ubuntu 24.04 LTS** (`noble`) | runner `ubuntu-24.04`, installation dans le conteneur `ubuntu:24.04` | `tuxedo-rust-center_<v>-1_amd64.deb` |
+| **Fedora** | conteneur `fedora:latest` (`RPM_IMAGE`) | `tuxedo-rust-center-<v>-1.fc<NN>.x86_64.rpm` |
+| **Arch Linux** | conteneur `archlinux:latest` (`ARCH_IMAGE`), `makepkg` non-root | `tuxedo-rust-center-<v>-1-x86_64.pkg.tar.zst` |
+
+- `version-check` échoue si le tag n'est pas exactement `v<version>` avec
+  `[workspace.package].version` de `Cargo.toml` ; les builds en dépendent.
+- Les images Fedora et Arch sont paramétrables sans modifier les étapes :
+  définir la variable de dépôt `RPM_IMAGE` / `ARCH_IMAGE` (Settings → Actions
+  → Variables). `container:` n'accepte pas le contexte `env` ; les étapes
+  reçoivent malgré tout `RPM_IMAGE`/`ARCH_IMAGE` pour les diagnostics.
+- Le job Fedora vérifie la présence de `rpmbuild`, `rpmspec`, `rpmlint` et
+  des paquets `qt6-*` sur l'image visée avant de construire ; le job Arch
+  vérifie `makepkg`, `namcap` et `qt6-*`. Une image sans ces paquets échoue
+  explicitement.
+- Le `.deb` est produit sur Ubuntu 24.04 et son changelog est normalisé sur
+  `noble` (`TCC_DEB_DISTRIBUTION`, défaut `noble`). Lintian, installation,
+  `systemd-analyze verify/security`, `desktop-file-validate`,
+  `appstreamcli validate`, `qmlimportscanner`, smoke test GUI offscreen et
+  purge sont exécutés dans `ubuntu:24.04`.
+- `SOURCE_DATE_EPOCH` est dérivé du commit (`git log -1 --format=%ct`) dans
+  chaque job, avant le build.
+- La release ne publie que sur tag et attache le `.deb`, le `.rpm`, le
+  `.pkg.tar.zst`, l'archive source et `SHA256SUMS` (plus `SHA256SUMS.asc` si
+  les secrets `GPG_PRIVATE_KEY`/`GPG_KEY_ID` sont définis). Aucun secret n'est
+  requis sinon.
+- Aucun `set -x`, aucune commande shell construite par interpolation, actions
+  officielles uniquement, `permissions: contents: read` par défaut et
+  `contents: write` réservé au job `release`.
+
+Procédure de tag :
+
+```sh
+# 1. Aligner les quatre versions (validate.sh vérifie l'égalité) :
+#    Cargo.toml [workspace.package].version, spec RPM, PKGBUILD, changelog.
+# 2. Taguer et pousser.
+git tag -a v0.1.0 -m "TuxedoRustCenter 0.1.0"
+git push origin v0.1.0
+# 3. La CI construit les trois paquets, puis crée la release GitHub.
+```
+
+Un tag déjà publié ne peut pas être republié tel quel (`gh release create
+--verify-tag` échoue si la release existe) : publier une nouvelle version
+plutôt que réécrire un tag.
+
 ---
 
 ## 6. Dépendances
@@ -287,7 +348,10 @@ cargo build --release --locked
 
 Les noms `qml6-module-*` et `libqt6*6t64` sont ceux de Debian 13 / Ubuntu
 24.04. Les alternatives `libqt6core6t64 | libqt6core6` couvrent la transition
-`t64`. Vérifier ces noms à chaque nouvelle distribution cible.
+`t64`. Le paquet de release cible **Ubuntu 24.04 LTS (`noble`)** : le
+changelog embarqué est normalisé sur cette distribution
+(`TCC_DEB_DISTRIBUTION`, défaut `noble`). Vérifier ces noms à chaque nouvelle
+distribution cible.
 
 ### RPM (`distro/rpm/tuxedo-rust-center.spec`)
 

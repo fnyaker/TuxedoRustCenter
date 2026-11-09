@@ -801,6 +801,43 @@ if need_tool dbus-daemon; then
 fi
 
 # ---------------------------------------------------------------------------
+# Valide un fichier tmpfiles avec systemd-tmpfiles quand c'est possible.
+# `--dry-run` n'existe qu'à partir de systemd 256 (absent d'Ubuntu 24.04) ;
+# sans lui, `--create --root` change les propriétaires et exige root.
+check_tmpfiles() {
+    tmpfiles_file=$1
+    tmpfiles_label=$2
+    if ! command -v systemd-tmpfiles >/dev/null 2>&1; then
+        skip "$tmpfiles_label : systemd-tmpfiles absent"
+        return 0
+    fi
+    tmpfiles_help=$(systemd-tmpfiles --help 2>&1 || true)
+    tmpfiles_root=$(mktemp -d)
+    case "$tmpfiles_help" in
+        *--dry-run*)
+            if systemd-tmpfiles --create --dry-run --root="$tmpfiles_root" \
+                "$tmpfiles_file" >/dev/null 2>&1; then
+                pass
+            else
+                fail "$tmpfiles_label"
+            fi
+            ;;
+        *)
+            if [ "$(id -u)" -eq 0 ]; then
+                if systemd-tmpfiles --create --root="$tmpfiles_root" \
+                    "$tmpfiles_file" >/dev/null 2>&1; then
+                    pass
+                else
+                    fail "$tmpfiles_label"
+                fi
+            else
+                skip "$tmpfiles_label : --dry-run absent et non-root (format vérifié)"
+            fi
+            ;;
+    esac
+    rm -rf "$tmpfiles_root"
+}
+
 section "udev et tmpfiles"
 
 UDEV_RULE="$REPO_ROOT/packaging/udev/99-tuxedo-rust-center-webcam.rules"
@@ -823,39 +860,7 @@ for line in \
     fi
 done
 
-if command -v systemd-tmpfiles >/dev/null 2>&1; then
-    # `--dry-run` n'existe qu'à partir de systemd 256 (absent d'Ubuntu 24.04).
-    # Sans lui, `--create --root` tente de changer les propriétaires et exige
-    # donc root : en non-root, on s'appuie sur les contrôles de format
-    # ci-dessus et on l'indique explicitement.
-    tmpfiles_help=$(systemd-tmpfiles --help 2>&1 || true)
-    case "$tmpfiles_help" in
-        *--dry-run*)
-            tmp_root=$(mktemp -d)
-            if systemd-tmpfiles --create --dry-run --root="$tmp_root" "$TMPFILES" >/dev/null 2>&1; then
-                pass
-            else
-                fail "systemd-tmpfiles refuse le fichier tmpfiles"
-            fi
-            rm -rf "$tmp_root"
-            ;;
-        *)
-            if [ "$(id -u)" -eq 0 ]; then
-                tmp_root=$(mktemp -d)
-                if systemd-tmpfiles --create --root="$tmp_root" "$TMPFILES" >/dev/null 2>&1; then
-                    pass
-                else
-                    fail "systemd-tmpfiles refuse le fichier tmpfiles"
-                fi
-                rm -rf "$tmp_root"
-            else
-                skip "systemd-tmpfiles sans --dry-run : contrôle binaire réservé à root"
-            fi
-            ;;
-    esac
-else
-    skip "systemd-tmpfiles absent"
-fi
+check_tmpfiles "$TMPFILES" "systemd-tmpfiles refuse le fichier tmpfiles"
 
 # ---------------------------------------------------------------------------
 section "Bureau et AppStream"
@@ -1254,16 +1259,8 @@ $candidate"
             fail "udevadm verify sur l'arbre installé"
         fi
     fi
-    if command -v systemd-tmpfiles >/dev/null 2>&1; then
-        tmp_root=$(mktemp -d)
-        if systemd-tmpfiles --create --dry-run --root="$tmp_root" \
-            "$TREE/usr/lib/tmpfiles.d/tuxedo-rust-center.conf" >/dev/null 2>&1; then
-            pass
-        else
-            fail "systemd-tmpfiles refuse le fichier installé"
-        fi
-        rm -rf "$tmp_root"
-    fi
+    check_tmpfiles "$TREE/usr/lib/tmpfiles.d/tuxedo-rust-center.conf" \
+        "systemd-tmpfiles refuse le fichier installé"
 
     # Lecture seule pour le daemon : aucun exécutable dans /etc.
     etc_exec=$(find "$TREE/etc" -type f -perm /111 -print 2>/dev/null)

@@ -355,7 +355,7 @@ jobs:
             fi
           done
           # Les paquets Qt 6 et les outils RPM doivent exister sur l'image.
-          rpm -q qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qtsvg-devel \
+          rpm -q qt6-qtbase-devel qt6-qtdeclarative-devel qt6-qtsvg-devel qt6-qt5compat \
             rpm-build rpmlint systemd-rpm-macros desktop-file-utils appstream
 
       - name: Spec conditionnel admin (sans binaire)
@@ -452,7 +452,7 @@ jobs:
       - name: Dépendances
         run: |
           pacman -Syu --noconfirm --needed base-devel rust \
-            qt6-base qt6-declarative qt6-svg hicolor-icon-theme \
+            qt6-base qt6-declarative qt6-svg qt6-5compat hicolor-icon-theme \
             namcap desktop-file-utils appstream libxml2 systemd dbus sudo
 
       - name: Horodatage reproductible
@@ -478,7 +478,7 @@ jobs:
               exit 1
             fi
           done
-          pacman -Q qt6-base qt6-declarative qt6-svg namcap
+          pacman -Q qt6-base qt6-declarative qt6-svg qt6-5compat namcap
 
       - name: Utilisateur de build (makepkg refuse root)
         run: |

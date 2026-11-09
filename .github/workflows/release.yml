@@ -554,6 +554,13 @@ jobs:
     permissions:
       contents: write
     steps:
+      # `gh release create --generate-notes` a besoin de l'historique git :
+      # sans checkout, il échoue par « not a git repository ».
+      - name: Récupérer le dépôt
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Récupérer les artefacts
         uses: actions/download-artifact@v4
         with:

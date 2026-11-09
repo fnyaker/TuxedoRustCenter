@@ -80,7 +80,7 @@ supplémentaire n'est requise.
 ## Dépendances QML (GUI)
 
 La GUI importe `Qt.labs.platform` (tray), `QtQuick.Dialogs` (`FileDialog`),
-`QtQuick.Effects`, `QtQml.Models`, `QtQuick.Shapes`, etc. Le tray natif
+`Qt5Compat.GraphicalEffects`, `QtQml.Models`, `QtQuick.Shapes`, etc. Le tray natif
 utilise en plus `QApplication` (glue C++ `qapplication_shim.cpp`) et
 **Qt6Widgets**. Les modules runtime sont déclarés :
 
@@ -88,7 +88,7 @@ utilise en plus `QApplication` (glue C++ `qapplication_shim.cpp`) et
   `qml6-module-qtquick-dialogs`, `qml6-module-qtqml-models`, plus les modules
   QtQuick déjà listés dans `distro/deb/control.in` ;
 - RPM : `qt6-qtbase-gui` (Qt6Widgets) et `qt6-qtdeclarative` (Qt.labs.platform,
-  QtQuick.Dialogs, QtQuick.Effects) ;
+  QtQuick.Dialogs, Qt5Compat.GraphicalEffects) ;
 - Arch : `qt6-base` (Qt6Widgets) et `qt6-declarative` (Labs Platform,
   Dialogs, Effects).
 

@@ -73,7 +73,6 @@ Rectangle {
             implicitWidth: 24
             implicitHeight: 24
             hoverEnabled: true
-            focusPolicy: Qt.TabFocus
             Accessible.role: Accessible.Button
             Accessible.name: Strings.t("common.close")
             onClicked: AppState.dismissToast(root.toastId)

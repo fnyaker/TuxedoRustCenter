@@ -15,7 +15,7 @@ tuxedo-rust-center (0.1.0-1) noble; urgency=medium
     fonctionnel (D1). Packaging phase 1 préparé (Admin1/Control1, polkit)
     derrière TCC_WITH_ADMIN=1 ; par défaut, rien n'est installé.
   * Dépendances QML complétées : Qt.labs.platform (tray), QtQuick.Dialogs
-    (FileDialog), QtQuick.Effects, QtQml.Models et Qt6Widgets/QApplication.
+    (FileDialog), Qt5Compat.GraphicalEffects, QtQml.Models et Qt6Widgets/QApplication.
   * Phase 2 (AD-12 B2) préparée : tccd-admin-hw (TDP/ODM/cTGP), unité durcie,
     activation D-Bus et policy AdminHw1 membre par membre. Non installé par
     défaut ; TCC_WITH_ADMIN_HW=1 (indépendant de TCC_WITH_ADMIN). Binaire

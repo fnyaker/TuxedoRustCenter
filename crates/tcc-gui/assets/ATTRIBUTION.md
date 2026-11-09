@@ -20,7 +20,7 @@ licence **GPL-3.0-or-later** (voir `LICENSE` et `NOTICE.md` à la racine).
 - `icons/icon_*.svg` : icônes d'interface. Les variantes monochromes ont été
   **modifiées** pour le rendu Qt : les remplissages `var(--icon-main)` et
   `var(--icon-detail)` ont été remplacés par du blanc avec des opacités
-  (1.0 / 0.55) afin de permettre une teinte à l'exécution via `MultiEffect`.
+  (1.0 / 0.55) afin de permettre une teinte à l'exécution via `ColorOverlay` (Qt5Compat.GraphicalEffects).
   La géométrie et les métadonnées d'origine sont conservées.
 - `icons/icon_profile_*.svg` et `icons/icon_displaylight.svg` (renommée pour
   suivre le préfixe `icon_`) sont des illustrations colorées copiées telles

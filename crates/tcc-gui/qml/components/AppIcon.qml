@@ -2,9 +2,14 @@
 // Copyright (c) 2026 TuxedoRustCenter contributors
 //
 // Icône SVG native. Les icônes mono sont normalisées en blanc + alpha puis
-// teintées via MultiEffect : une seule ressource sert les deux thèmes et tous
-// les états (normal, actif, désactivé). Les illustrations colorées (profils,
-// marque) sont rendues telles quelles.
+// teintées via ColorOverlay (Qt5Compat.GraphicalEffects) : une seule ressource
+// sert les deux thèmes et tous les états (normal, actif, désactivé). Les
+// illustrations colorées (profils, marque) sont rendues telles quelles.
+//
+// Choix de ColorOverlay plutôt que MultiEffect : QtQuick.Effects n'existe
+// qu'à partir de Qt 6.5, alors que la cible .deb est Ubuntu 24.04 (Qt 6.4).
+// Qt5Compat.GraphicalEffects est fourni par Qt 6.4 et par toutes les cibles
+// (Arch, Fedora, Ubuntu).
 //
 // Résolution des chemins centralisée ici : un déploiement en qrc:/ ne change
 // que ce fichier.
@@ -13,7 +18,7 @@ pragma ComponentBehavior: Bound
 
 import QtQuick
 import "../core"
-import QtQuick.Effects
+import Qt5Compat.GraphicalEffects
 
 Item {
     id: root
@@ -44,12 +49,10 @@ Item {
         visible: !root.monochrome
     }
 
-    MultiEffect {
+    ColorOverlay {
         anchors.fill: parent
         source: img
         visible: root.monochrome
-        colorizationColor: root.color
-        colorization: 1.0
-        // Pas d'ombre ni de flou : uniquement la teinte, coût minimal.
+        color: root.color
     }
 }

@@ -171,13 +171,16 @@ Contrastes WCAG 2.1 calculés (AA texte normal ≥ 4,5:1, grand texte ≥ 3:1) :
 | `Toast` | Notification transitoire | Barre de couleur, fermeture 24 px, durée 4,2 s |
 | `AppToolTip` | Aide contextuelle | Contraste inversé, délai 400–600 ms |
 | `Glyph` | Chevrons, croix, coche, +/−, kebab, loupe | Dessiné nativement, jamais une police d'icônes |
-| `AppIcon` | Icône SVG 512² | Teinte à l'exécution (MultiEffect), illustrations colorées non teintées |
+| `AppIcon` | Icône SVG 512² | Teinte à l'exécution (ColorOverlay, Qt5Compat), illustrations colorées non teintées |
 
 ### Règles d'états
 
 - **Survol** : uniquement sur les éléments actionnables, via `surfaceHover`.
 - **Focus** : anneau 2 px `focusRing` avec 3 px de décalage, visible
   uniquement au clavier (`activeFocus`/`visualFocus`), jamais au clic souris.
+  La politique de focus n'est pas fixée dans le QML (`Item.focusPolicy` exige
+  Qt 6.7, la cible `.deb` est Ubuntu 24.04 / Qt 6.4) : les contrôles utilisent
+  les valeurs par défaut de Qt Quick Controls.
 - **Désactivé** : couleur atténuée + `enabled: false`, jamais seulement
   l'opacité (les lecteurs d'écran doivent aussi voir l'état).
 - **Non pris en charge** : le contrôle est désactivé **et** un badge/texte

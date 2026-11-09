@@ -96,6 +96,9 @@ TestCase {
     }
 
     function init() {
+        // Les libellés comparés dans les tests sont les chaînes françaises
+        // de référence : la langue par défaut de l'application est l'anglais.
+        Strings.lang = "fr";
         reset();
         LiveData.connected = true;
         LiveData.profilesJson = fixture();

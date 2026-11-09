@@ -37,6 +37,7 @@ BuildRequires:  appstream
 Requires:       qt6-qtbase
 Requires:       qt6-qtbase-gui
 Requires:       qt6-qtdeclarative
+Requires:       qt6-qt5compat
 Requires:       qt6-qtsvg
 Requires:       hicolor-icon-theme
 Requires:       systemd
@@ -196,4 +197,4 @@ fi
   --with admin_hw ; --with admin seul ne l'installe pas. Binaire
   tccd-admin-hw livré ; validation fonctionnelle/matérielle en cours.
 - Dépendances QML complétées : Qt.labs.platform, QtQuick.Dialogs,
-  QtQuick.Effects, QtQml.Models et Qt6Widgets/QApplication.
+  Qt5Compat.GraphicalEffects, QtQml.Models et Qt6Widgets/QApplication.

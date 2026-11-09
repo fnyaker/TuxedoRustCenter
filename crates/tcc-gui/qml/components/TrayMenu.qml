@@ -137,7 +137,6 @@ Popup {
                 Layout.rightMargin: Theme.s6
                 implicitHeight: 34
                 hoverEnabled: true
-                focusPolicy: Qt.TabFocus
                 Accessible.role: Accessible.RadioButton
                 Accessible.name: modelData.name
                 Accessible.checked: LiveData.resolvedActiveId === modelData.id
@@ -248,7 +247,6 @@ Popup {
             Layout.margins: Theme.s6
             implicitHeight: 34
             hoverEnabled: true
-            focusPolicy: Qt.TabFocus
             Accessible.role: Accessible.Button
             Accessible.name: Strings.t("tray.open")
 
@@ -286,7 +284,6 @@ Popup {
             Layout.bottomMargin: Theme.s6
             implicitHeight: 34
             hoverEnabled: true
-            focusPolicy: Qt.TabFocus
             Accessible.role: Accessible.Button
             Accessible.name: Strings.t("tray.quit")
 

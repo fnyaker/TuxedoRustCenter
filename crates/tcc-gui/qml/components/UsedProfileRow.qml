@@ -22,7 +22,6 @@ AbstractButton {
     implicitHeight: 44
     implicitWidth: compact ? 52 : Theme.sidebarWidth - Theme.s24
     hoverEnabled: true
-    focusPolicy: Qt.TabFocus
     Accessible.role: Accessible.Button
     Accessible.name: stateLabel + " : " + profileName
 

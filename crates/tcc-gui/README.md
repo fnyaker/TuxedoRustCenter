@@ -176,7 +176,7 @@ Détail des règles de repli et des limites : `docs/ui/UI_DESIGN.md` §15.
 - Contrastes AA documentés, focus clavier, cibles ≥ 32 px, rôles accessibles.
 - `reduceMotion` désactive toutes les animations.
 - Graphiques en `Shape`/`PathSvg` (pas de QtCharts), jauges natives, aucun
-  effet de flou ; seules les icônes sont teintées via `MultiEffect` (backend
+  effet de flou ; seules les icônes sont teintées via `ColorOverlay` de `Qt5Compat.GraphicalEffects` (backend
   RHI requis).
 
 ## Licences

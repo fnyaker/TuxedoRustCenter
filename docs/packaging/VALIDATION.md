@@ -76,7 +76,7 @@ Couvre notamment :
 - tmpfiles : trois répertoires 0755 root:root, acceptés par
   `systemd-tmpfiles --create --dry-run` ;
 - dépendances QML : chaque import direct (`Qt.labs.platform`, `QtQuick.Dialogs`,
-  `QtQuick.Effects`, `QtQml.Models`, etc.) est mappé vers un paquet Debian
+  `Qt5Compat.GraphicalEffects`, `QtQml.Models`, etc.) est mappé vers un paquet Debian
   déclaré ; RPM/Arch vérifient `qt6-qtdeclarative`/`qt6-declarative` ;
 - desktop/AppStream : `desktop-file-validate` et `appstreamcli validate
   --no-net` passent ;
@@ -133,7 +133,7 @@ installés) sur `crates/tcc-gui/qml` :
 ```
 
 Modules résolus : `QtCore`, `Qt.labs.platform`, `QtQml.Models`, `QtQuick`,
-`QtQuick.Controls`, `QtQuick.Dialogs`, `QtQuick.Effects`, `QtQuick.Layouts`,
+`QtQuick.Controls`, `QtQuick.Dialogs`, `Qt5Compat.GraphicalEffects`, `QtQuick.Layouts`,
 `QtQuick.Shapes`, `QtQuick.Window`. `Tcc` est compilé dans le binaire.
 La CI `deb-install` rejoue ce contrôle sur l'arborescence installée.
 

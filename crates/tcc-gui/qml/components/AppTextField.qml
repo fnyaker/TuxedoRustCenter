@@ -30,7 +30,6 @@ TextField {
     bottomPadding: 0
     verticalAlignment: TextInput.AlignVCenter
     selectByMouse: true
-    focusPolicy: Qt.StrongFocus
     Accessible.description: errorText
 
     background: Rectangle {

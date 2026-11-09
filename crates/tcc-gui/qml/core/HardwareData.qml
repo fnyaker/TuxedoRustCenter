@@ -668,11 +668,11 @@ QtObject {
             return { "kind": "none", "value": 0, "index": 0, "key": "", "label": "" };
         var raw = value.value;
         var numeric = typeof raw === "number" && isFinite(raw) ? raw : null;
-        var boolean = typeof raw === "boolean" ? raw : null;
+        var boolValue = typeof raw === "boolean" ? raw : null;
         return {
             "kind": value.kind || "none",
-            "value": numeric !== null ? numeric : (boolean !== null ? (boolean ? 1 : 0) : 0),
-            "boolean": boolean,
+            "value": numeric !== null ? numeric : (boolValue !== null ? (boolValue ? 1 : 0) : 0),
+            "boolean": boolValue,
             "index": root._number(value.index, 0),
             "key": value.key || "",
             "label": value.label || ""

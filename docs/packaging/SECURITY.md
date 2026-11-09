@@ -187,7 +187,7 @@ demande par udev. Si `modprobe@.service` n'existe pas (systemd ancien), le
 
 La GUI est Qt 6 native (aucun QtWebEngine/HTML). Les imports QML
 `Qt.labs.platform` (tray), `QtQuick.Dialogs` (`FileDialog`),
-`QtQuick.Effects`, `QtQml.Models`, etc. sont couverts par des paquets runtime
+`Qt5Compat.GraphicalEffects`, `QtQml.Models`, etc. sont couverts par des paquets runtime
 déclarés (Debian : `qml6-module-*` ; RPM/Arch : `qt6-qtdeclarative` /
 `qt6-declarative`). Le tray natif utilise `QApplication` via une glue C++ et
 **Qt6Widgets** : `libqt6widgets6` (Debian), `qt6-qtbase-gui` (RPM),

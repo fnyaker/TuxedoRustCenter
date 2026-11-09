@@ -16,7 +16,6 @@ Slider {
     implicitHeight: 24
     implicitWidth: 160
     hoverEnabled: true
-    focusPolicy: Qt.TabFocus
 
     background: Rectangle {
         x: control.leftPadding

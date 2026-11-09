@@ -875,11 +875,12 @@ qml_debian_package() {
     case "$1" in
         QtCore) echo "qml6-module-qtcore" ;;
         Qt.labs.platform) echo "qml6-module-qt-labs-platform" ;;
+        Qt.labs.settings) echo "qml6-module-qt-labs-settings" ;;
         QtQml.Models) echo "qml6-module-qtqml-models" ;;
         QtQuick) echo "qml6-module-qtquick" ;;
         QtQuick.Controls) echo "qml6-module-qtquick-controls" ;;
         QtQuick.Dialogs) echo "qml6-module-qtquick-dialogs" ;;
-        QtQuick.Effects) echo "qml6-module-qtquick-effects" ;;
+        Qt5Compat.GraphicalEffects) echo "qml6-module-qt5compat-graphicaleffects" ;;
         QtQuick.Layouts) echo "qml6-module-qtquick-layouts" ;;
         QtQuick.Shapes) echo "qml6-module-qtquick-shapes" ;;
         QtQuick.Window) echo "qml6-module-qtquick-window" ;;

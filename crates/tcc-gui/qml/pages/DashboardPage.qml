@@ -228,7 +228,6 @@ PageScroll {
                 Layout.fillWidth: true
                 Layout.alignment: Qt.AlignVCenter
                 hoverEnabled: true
-                focusPolicy: Qt.TabFocus
                 enabled: LiveData.resolvedActiveId !== ""
                 Accessible.role: Accessible.Button
                 Accessible.name: Strings.tf("dash.openProfile", [LiveData.activeName])
@@ -320,7 +319,6 @@ PageScroll {
                     AbstractButton {
                         id: primeLink
                         visible: page.primeVisible
-                        focusPolicy: Qt.TabFocus
                         Accessible.role: Accessible.Button
                         Accessible.name: Strings.tf("dash.openGraphicsSettings",
                                                     [page.graphModeLabel()])

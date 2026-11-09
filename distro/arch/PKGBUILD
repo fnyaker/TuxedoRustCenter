@@ -23,7 +23,7 @@ pkgdesc="Native Qt 6 TUXEDO Control Center rewrite"
 arch=('x86_64' 'aarch64')
 url="https://github.com/fnyaker/TuxedoRustCenter"
 license=('GPL-3.0-or-later')
-depends=('glibc' 'gcc-libs' 'qt6-base' 'qt6-declarative' 'qt6-svg'
+depends=('glibc' 'gcc-libs' 'qt6-base' 'qt6-declarative' 'qt6-5compat' 'qt6-svg'
          'hicolor-icon-theme' 'dbus' 'systemd')
 makedepends=('cargo' 'rust')
 checkdepends=('desktop-file-utils' 'appstream' 'libxml2' 'systemd')

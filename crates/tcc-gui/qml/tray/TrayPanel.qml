@@ -160,7 +160,6 @@ Window {
                     width: ListView.view ? ListView.view.width : 0
                     height: 32
                     hoverEnabled: true
-                    focusPolicy: Qt.TabFocus
                     Accessible.role: Accessible.RadioButton
                     Accessible.name: modelData.name
                     Accessible.checked: panel.activeProfileId === modelData.id

@@ -324,6 +324,41 @@ Un tag déjà publié ne peut pas être republié tel quel (`gh release create
 --verify-tag` échoue si la release existe) : publier une nouvelle version
 plutôt que réécrire un tag.
 
+### 5.2 Cible Qt 6.4 (Ubuntu 24.04) et teinte des icônes
+
+Ubuntu 24.04 LTS embarque **Qt 6.4.2** ; `QtQuick.Effects` (`MultiEffect`)
+n'existe qu'à partir de **Qt 6.5**. `crates/tcc-gui/qml/components/AppIcon.qml`
+teinte donc les icônes avec `ColorOverlay` de `Qt5Compat.GraphicalEffects`,
+disponible dans Qt 6.4 et fourni par les trois cibles
+(`qml6-module-qt5compat-graphicaleffects` sur Debian/Ubuntu,
+`qt6-qt5compat` sur Fedora, `qt6-5compat` sur Arch).
+
+Conséquences maintenues :
+
+- `distro/deb/control.in` ne dépend plus de `qml6-module-qtquick-effects`
+  (inexistant sur `noble`) mais de `qml6-module-qt5compat-graphicaleffects` ;
+  le `.deb` est installable sur un 24.04 stock, et le job `deb-install`
+  vérifie l'installation réelle.
+- `qt6-svg-plugins` n'existe pas sur `noble` : le plugin SVG (`libqsvg.so`)
+  est fourni par `libqt6svg6`. La dépendance est donc
+  `qt6-svg-plugins | libqt6svg6`, satisfaite sur Debian 13 **et** Ubuntu 24.04.
+
+**Ne pas réintroduire `QtQuick.Effects`/`MultiEffect`** sans relever la cible
+`.deb` vers Qt ≥ 6.5 (Debian 13, Ubuntu ≥ 25.04) : le paquet deviendrait
+ininstallable sur Ubuntu 24.04 et la CI de release échouerait volontairement.
+
+Autres limites Qt 6.4 appliquées au QML (vérifiées en chargeant chaque
+composant avec Qt 6.4.2 dans `ubuntu:24.04`) :
+
+- préférences persistées via `Qt.labs.settings`, pas `QtCore.Settings`
+  (`Settings` n'existe qu'à partir de Qt 6.5) ;
+- pas de `focusPolicy` sur les items (`Item.focusPolicy` date de Qt 6.7) :
+  les contrôles utilisent la politique de focus par défaut ;
+- `StandardPaths` (QtCore) est disponible mais reste utilisé pour le seul
+  chemin par défaut des dialogues d'import/export ;
+- éviter les identifiants réservés en JS (`boolean`, …) : le moteur QML de
+  Qt 6.4 les refuse à la compilation.
+
 ---
 
 ## 6. Dépendances
@@ -333,11 +368,13 @@ plutôt que réécrire un tag.
 - `Depends` : bibliothèques Qt 6 réellement liées (`libQt6Core`, `Gui`,
   `Widgets` — glue `QApplication` du tray, `Qml`, `Quick`, `QuickControls2`,
   `QuickTemplates2`, `Svg`), plugins de plateforme
-  (`qt6-qpa-plugins`), plugin image SVG (`qt6-svg-plugins`, séparé sur
-  Debian) et modules QML importés. Les noms Debian sont préfixés
+  (`qt6-qpa-plugins`), plugin image SVG (`qt6-svg-plugins | libqt6svg6` :
+  séparé sur Debian 13, fourni par `libqt6svg6` sur Ubuntu 24.04) et modules
+  QML importés. Les noms Debian sont préfixés
   `qml6-module-` : `qtcore`, `qt-labs-platform` (`Qt.labs.platform`, tray),
   `qtquick`, `qtquick-controls`, `qtquick-dialogs` (`FileDialog`),
-  `qtquick-effects`, `qtquick-layouts`, `qtquick-shapes`, `qtquick-window`,
+  `qt5compat-graphicaleffects` (`ColorOverlay`), `qtquick-layouts`,
+  `qtquick-shapes`, `qtquick-window`,
   `qtqml-models`, `qtqml-workerscript`.
 - `Recommends` : `tuxedo-drivers | tuxedo-keyboard`, `power-profiles-daemon`,
   `upower`, `polkitd`, `hicolor-icon-theme`.
@@ -356,10 +393,10 @@ distribution cible.
 ### RPM (`distro/rpm/tuxedo-rust-center.spec`)
 
 - `Requires` : `qt6-qtbase`, `qt6-qtbase-gui` (Qt6Widgets/QApplication),
-  `qt6-qtdeclarative`, `qt6-qtsvg`, `hicolor-icon-theme`, `systemd`.
-  `qt6-qtdeclarative` fournit
-  `Qt.labs.platform`, `QtQuick.Dialogs`, `QtQuick.Effects` et `QtQml.Models`
-  (vérifié sur Fedora).
+  `qt6-qtdeclarative`, `qt6-qt5compat` (`Qt5Compat.GraphicalEffects`,
+  `ColorOverlay`), `qt6-qtsvg`, `hicolor-icon-theme`, `systemd`.
+  `qt6-qtdeclarative` fournit `Qt.labs.platform`, `QtQuick.Dialogs` et
+  `QtQml.Models` (vérifié sur Fedora).
 - `Recommends` : `tuxedo-drivers`, `power-profiles-daemon`, `upower`, `polkit`.
 - `Suggests` : `tuxedo-tomte`, `tuxedo-systeminfos`, `kscreen`,
   `switcheroo-control`.
@@ -369,10 +406,10 @@ distribution cible.
 ### Arch (`distro/arch/PKGBUILD`)
 
 - `depends` : `glibc`, `gcc-libs`, `qt6-base` (Qt6Widgets/QApplication),
-  `qt6-declarative`, `qt6-svg`, `hicolor-icon-theme`, `dbus`, `systemd`.
-  `qt6-declarative` fournit
-  `Qt.labs.platform`, `QtQuick.Dialogs`, `QtQuick.Effects` et `QtQml.Models`
-  (vérifié sur Arch).
+  `qt6-declarative`, `qt6-5compat` (`Qt5Compat.GraphicalEffects`,
+  `ColorOverlay`), `qt6-svg`, `hicolor-icon-theme`, `dbus`, `systemd`.
+  `qt6-declarative` fournit `Qt.labs.platform`, `QtQuick.Dialogs` et
+  `QtQml.Models` (vérifié sur Arch).
 - `optdepends` : drivers TUXEDO, PPD, UPower, polkit, tomte, kscreen,
   `nvidia-utils`, `switcheroo-control`.
 

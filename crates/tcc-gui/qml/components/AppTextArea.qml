@@ -30,7 +30,6 @@ TextArea {
     bottomPadding: Theme.s8
     wrapMode: TextEdit.Wrap
     selectByMouse: true
-    focusPolicy: Qt.StrongFocus
     Accessible.description: errorText
 
     background: Rectangle {

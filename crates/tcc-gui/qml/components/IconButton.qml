@@ -21,7 +21,6 @@ AbstractButton {
     implicitWidth: Theme.hitTarget
     implicitHeight: Theme.hitTarget
     hoverEnabled: true
-    focusPolicy: Qt.TabFocus
     Accessible.name: text !== "" ? text : tooltip
     Accessible.role: Accessible.Button
 

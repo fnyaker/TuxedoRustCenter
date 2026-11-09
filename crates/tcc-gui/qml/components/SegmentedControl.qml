@@ -60,7 +60,6 @@ Item {
                     Layout.fillHeight: true
                     Layout.preferredWidth: Math.max(56, label.implicitWidth + Theme.s16)
                     hoverEnabled: true
-                    focusPolicy: Qt.TabFocus
                     Accessible.role: Accessible.RadioButton
                     Accessible.name: modelData.label
                     Accessible.checked: root.currentIndex === index

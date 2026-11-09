@@ -17,7 +17,6 @@ Switch {
     implicitWidth: 40
     implicitHeight: 24
     hoverEnabled: true
-    focusPolicy: Qt.TabFocus
     Accessible.checked: checked
 
     indicator: Rectangle {

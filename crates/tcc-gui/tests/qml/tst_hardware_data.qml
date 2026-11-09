@@ -17,6 +17,12 @@ TestCase {
     name: "HardwareData"
     when: windowShown
 
+    // Les libellés comparés dans les tests sont les chaînes françaises de
+    // référence : la langue par défaut de l'application est l'anglais.
+    function init() {
+        Strings.lang = "fr";
+    }
+
     readonly property string liveJson: JSON.stringify({
         "device": {
             "available": true,

@@ -3,11 +3,13 @@
 //
 // État de présentation du shell (page courante, préférences, toasts).
 // Aucune logique métier : la vérité vient du daemon via tcc-ipc.
-// Les préférences locales sont persistées avec QtCore.Settings (QSettings).
+// Les préférences locales sont persistées avec Qt.labs.settings
+// (QtCore.Settings n'existe qu'à partir de Qt 6.5 ; la cible .deb est
+// Ubuntu 24.04 / Qt 6.4).
 
 pragma Singleton
 import QtQuick
-import QtCore
+import Qt.labs.settings
 
 Item {
     id: root

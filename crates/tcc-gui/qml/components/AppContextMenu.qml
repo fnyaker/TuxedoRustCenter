@@ -54,7 +54,6 @@ Popup {
                 implicitHeight: 36
                 enabled: modelData.enabled !== false
                 hoverEnabled: true
-                focusPolicy: enabled ? Qt.TabFocus : Qt.NoFocus
                 Accessible.role: Accessible.MenuItem
                 Accessible.name: modelData.label
                 Accessible.description: modelData.disabledReason === undefined

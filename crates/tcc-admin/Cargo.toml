@@ -2,6 +2,7 @@
 name = "tcc-admin"
 version.workspace = true
 edition.workspace = true
+publish = false
 rust-version.workspace = true
 license.workspace = true
 description = "Actions administratives à la demande de TuxedoRustCenter (phase 1)"

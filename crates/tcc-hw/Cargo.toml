@@ -2,6 +2,7 @@
 name = "tcc-hw"
 version.workspace = true
 edition.workspace = true
+publish = false
 rust-version.workspace = true
 license.workspace = true
 description = "Couche matérielle Linux : sysfs, hwmon, ioctl tuxedo-io, DMI, affichage"

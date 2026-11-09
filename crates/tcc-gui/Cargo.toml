@@ -2,6 +2,7 @@
 name = "tcc-gui"
 version.workspace = true
 edition.workspace = true
+publish = false
 rust-version.workspace = true
 license.workspace = true
 description = "GUI Qt 6 native de TuxedoRustCenter"

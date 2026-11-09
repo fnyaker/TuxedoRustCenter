@@ -825,7 +825,14 @@ done
 
 if command -v systemd-tmpfiles >/dev/null 2>&1; then
     tmp_root=$(mktemp -d)
-    if systemd-tmpfiles --create --dry-run --root="$tmp_root" "$TMPFILES" >/dev/null 2>&1; then
+    # `--dry-run` n'existe qu'à partir de systemd 256 (absent d'Ubuntu 24.04) :
+    # sans lui, `--root` confine déjà toutes les créations dans un répertoire
+    # temporaire, donc rien n'est écrit sur le système.
+    tmpfiles_args=(--create --root="$tmp_root")
+    if systemd-tmpfiles --help 2>&1 | grep -q -- '--dry-run'; then
+        tmpfiles_args=(--create --dry-run --root="$tmp_root")
+    fi
+    if systemd-tmpfiles "${tmpfiles_args[@]}" "$TMPFILES" >/dev/null 2>&1; then
         pass
     else
         fail "systemd-tmpfiles refuse le fichier tmpfiles"

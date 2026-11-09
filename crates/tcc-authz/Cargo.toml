@@ -2,6 +2,7 @@
 name = "tcc-authz"
 version.workspace = true
 edition.workspace = true
+publish = false
 rust-version.workspace = true
 license.workspace = true
 description = "Autorisation polkit partagée par tccd et tccd-admin (AD-3, AD-4, AD-9)"

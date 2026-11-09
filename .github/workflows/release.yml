@@ -97,7 +97,7 @@ jobs:
             qt6-base-dev qt6-declarative-dev qt6-tools-dev qt6-l10n-tools \
             qt6-svg-dev libgl1-mesa-dev \
             dpkg-dev lintian desktop-file-utils appstream libxml2-utils \
-            systemd systemd-udev udev dbus dbus-daemon
+            systemd udev dbus dbus-daemon
 
       - name: Horodatage reproductible
         run: |

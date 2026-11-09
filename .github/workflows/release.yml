@@ -126,14 +126,14 @@ jobs:
           test ! -e build/pkgroot/usr/share/dbus-1/system-services/com.tuxedocomputers.tccd.Admin.Hw.service
 
           # `--with-admin` seul n'installe JAMAIS Admin.Hw.
-          TCC_WITH_ADMIN=1 scripts/release/install-tree.sh build/admin-only-root >/dev/null
+          TCC_WITH_ADMIN=1 scripts/release/install-tree.sh "$PWD/build/admin-only-root" >/dev/null
           test -x build/admin-only-root/usr/libexec/tuxedo-rust-center/tccd-admin
           test ! -e build/admin-only-root/usr/libexec/tuxedo-rust-center/tccd-admin-hw
           test ! -e build/admin-only-root/usr/lib/systemd/system/tccd-admin-hw.service
 
           # Binaire absent ⇒ refus explicite, jamais une activation morte.
           mv "$hw_bin" target/release/tccd-admin-hw.off
-          if TCC_WITH_ADMIN_HW=1 scripts/release/install-tree.sh build/admin-hw-root >/dev/null 2>&1; then
+          if TCC_WITH_ADMIN_HW=1 scripts/release/install-tree.sh "$PWD/build/admin-hw-root" >/dev/null 2>&1; then
             mv target/release/tccd-admin-hw.off "$hw_bin"
             echo "TCC_WITH_ADMIN_HW=1 devait échouer sans binaire tccd-admin-hw" >&2
             exit 1
@@ -142,7 +142,7 @@ jobs:
           mv target/release/tccd-admin-hw.off "$hw_bin"
 
           # Binaire présent ⇒ binaire + unité + activation ensemble, validés.
-          TCC_WITH_ADMIN_HW=1 scripts/release/install-tree.sh build/hw-root >/dev/null
+          TCC_WITH_ADMIN_HW=1 scripts/release/install-tree.sh "$PWD/build/hw-root" >/dev/null
           test -x build/hw-root/usr/libexec/tuxedo-rust-center/tccd-admin-hw
           test -f build/hw-root/usr/lib/systemd/system/tccd-admin-hw.service
           test -f build/hw-root/usr/share/dbus-1/system-services/com.tuxedocomputers.tccd.Admin.Hw.service

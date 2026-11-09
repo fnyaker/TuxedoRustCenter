@@ -15,4 +15,10 @@ fn main() {
         .cpp_file("src/qapplication_shim.cpp")
         .file("src/daemon_client.rs")
         .build();
+
+    // Certains éditeurs de liens (binutils récents, Fedora) appliquent
+    // `-Wl,--as-needed` avant les archives générées par cxx-qt : `-lQt6Widgets`
+    // est alors éliminé et `QApplication` reste non résolu. Déclarer la
+    // bibliothèque ici la place en fin de ligne de commande, après les objets.
+    println!("cargo:rustc-link-lib=dylib=Qt6Widgets");
 }

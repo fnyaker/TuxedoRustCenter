@@ -331,7 +331,7 @@ Comportement global, bascule automatique et services
 
 ┌ Apparence et format ──────────────────────────────────────────────────────┐
 │ Thème                     [Système][Clair][Sombre]                        │
-│ Langue                    [Français][English][Deutsch]                    │
+│ Langue                    [English][Français][Deutsch]                    │
 │ Unité de température      [°C][°F]                                        │
 │ Réduire les animations                             (interrupteur OFF)     │
 └───────────────────────────────────────────────────────────────────────────┘

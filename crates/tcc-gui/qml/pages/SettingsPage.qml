@@ -18,7 +18,7 @@ import "../core"
 PageScroll {
     id: page
 
-    readonly property var languageCodes: ["fr", "en", "de"]
+    readonly property var languageCodes: ["en", "fr", "de"]
     readonly property var matrixPpdKeys: ["power-saver", "balanced", "performance"]
     readonly property var matrixPowerKeys: ["ac", "battery"]
 

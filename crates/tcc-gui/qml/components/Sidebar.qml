@@ -281,12 +281,12 @@ Rectangle {
     AppContextMenu {
         id: languageMenu
         items: [
-            { "label": "Français", "checked": AppState.language === "fr" },
             { "label": "English", "checked": AppState.language === "en" },
+            { "label": "Français", "checked": AppState.language === "fr" },
             { "label": "Deutsch", "checked": AppState.language === "de" }
         ]
         onTriggered: function(index) {
-            var codes = ["fr", "en", "de"];
+            var codes = ["en", "fr", "de"];
             AppState.setLanguage(codes[index]);
         }
     }

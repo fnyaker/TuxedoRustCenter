@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 // Copyright (c) 2026 TuxedoRustCenter contributors
 //
-// Chaînes d'interface FR/EN/DE et formats localisés.
+// Chaînes d'interface EN/FR/DE (anglais par défaut) et formats localisés.
 //
 // Choix assumé : dictionnaire embarqué pour permettre le changement de langue
 // à chaud sans redémarrage, sans étape lrelease. Ce singleton pourra être
@@ -14,11 +14,11 @@ import QtQuick
 QtObject {
     id: root
 
-    property string lang: "fr"
+    property string lang: "en"
 
-    readonly property var dict: lang === "de" ? de : (lang === "en" ? en : fr)
+    readonly property var dict: lang === "de" ? de : (lang === "fr" ? fr : en)
     readonly property var locale: lang === "de" ? Qt.locale("de_DE")
-                                 : lang === "en" ? Qt.locale("en_US") : Qt.locale("fr_FR")
+                                 : lang === "fr" ? Qt.locale("fr_FR") : Qt.locale("en_US")
 
     // Traduction simple. Retourne la clé si absente (visible en dev, jamais en prod).
     function t(key) {

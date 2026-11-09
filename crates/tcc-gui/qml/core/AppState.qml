@@ -58,7 +58,7 @@ Item {
         id: prefs
         category: "ui-jalon1"
         property string themeMode: "system"
-        property string language: "fr"
+        property string language: "en"
         property string temperatureUnit: "c"
         property bool reducedMotion: false
     }

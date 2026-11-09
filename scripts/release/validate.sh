@@ -824,20 +824,35 @@ for line in \
 done
 
 if command -v systemd-tmpfiles >/dev/null 2>&1; then
-    tmp_root=$(mktemp -d)
-    # `--dry-run` n'existe qu'à partir de systemd 256 (absent d'Ubuntu 24.04) :
-    # sans lui, `--root` confine déjà toutes les créations dans un répertoire
-    # temporaire, donc rien n'est écrit sur le système.
-    tmpfiles_args=(--create --root="$tmp_root")
-    if systemd-tmpfiles --help 2>&1 | grep -q -- '--dry-run'; then
-        tmpfiles_args=(--create --dry-run --root="$tmp_root")
-    fi
-    if systemd-tmpfiles "${tmpfiles_args[@]}" "$TMPFILES" >/dev/null 2>&1; then
-        pass
-    else
-        fail "systemd-tmpfiles refuse le fichier tmpfiles"
-    fi
-    rm -rf "$tmp_root"
+    # `--dry-run` n'existe qu'à partir de systemd 256 (absent d'Ubuntu 24.04).
+    # Sans lui, `--create --root` tente de changer les propriétaires et exige
+    # donc root : en non-root, on s'appuie sur les contrôles de format
+    # ci-dessus et on l'indique explicitement.
+    tmpfiles_help=$(systemd-tmpfiles --help 2>&1 || true)
+    case "$tmpfiles_help" in
+        *--dry-run*)
+            tmp_root=$(mktemp -d)
+            if systemd-tmpfiles --create --dry-run --root="$tmp_root" "$TMPFILES" >/dev/null 2>&1; then
+                pass
+            else
+                fail "systemd-tmpfiles refuse le fichier tmpfiles"
+            fi
+            rm -rf "$tmp_root"
+            ;;
+        *)
+            if [ "$(id -u)" -eq 0 ]; then
+                tmp_root=$(mktemp -d)
+                if systemd-tmpfiles --create --root="$tmp_root" "$TMPFILES" >/dev/null 2>&1; then
+                    pass
+                else
+                    fail "systemd-tmpfiles refuse le fichier tmpfiles"
+                fi
+                rm -rf "$tmp_root"
+            else
+                skip "systemd-tmpfiles sans --dry-run : contrôle binaire réservé à root"
+            fi
+            ;;
+    esac
 else
     skip "systemd-tmpfiles absent"
 fi

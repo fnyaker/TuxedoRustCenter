@@ -719,6 +719,8 @@ QtObject {
 
         "tray.title": "TUXEDO Control Center",
         "tray.profiles": "Activer un profil",
+        "tray.search": "Rechercher un profil",
+        "tray.noMatch": "Aucun profil correspondant",
         "tray.auto": "Bascule automatique",
         "tray.open": "Ouvrir la fenêtre",
         "tray.blocker": "Bloquer la veille",
@@ -1382,6 +1384,8 @@ QtObject {
 
         "tray.title": "TUXEDO Control Center",
         "tray.profiles": "Activate a profile",
+        "tray.search": "Search profiles",
+        "tray.noMatch": "No matching profile",
         "tray.auto": "Automatic switching",
         "tray.open": "Open window",
         "tray.blocker": "Block suspend",
@@ -2045,6 +2049,8 @@ QtObject {
 
         "tray.title": "TUXEDO Control Center",
         "tray.profiles": "Profil aktivieren",
+        "tray.search": "Profile suchen",
+        "tray.noMatch": "Kein passendes Profil",
         "tray.auto": "Automatische Umschaltung",
         "tray.open": "Fenster öffnen",
         "tray.blocker": "Ruhezustand blockieren",

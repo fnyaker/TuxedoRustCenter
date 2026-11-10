@@ -53,3 +53,24 @@ puissance CPU active la collecte (bail de 10 s).
 tcc-cli omarchy-plugin install
 omarchy plugin enable tuxedo.tcc-stats
 ```
+
+## Tableau de bord gpui : jauges
+
+Jauges en arc (270°) pour la charge CPU, la puissance CPU, la température et
+chaque ventilateur. Maximum : 100 % et 100 °C ; pour la puissance, au moins
+15 W, au moins le TDP connu, relevé par paliers de 5 W dès qu'une mesure le
+dépasse (« max auto »). L'affichage suit le réglage °C/°F.
+
+## Langues
+
+`tcc-gpui` (en, fr, de), le plugin de barre (en, fr, de ; les autres langues
+d'Omarchy retombent sur l'anglais) et la GUI Qt (fr, en, de) suivent la langue
+du système (`LC_ALL`, `LC_MESSAGES`, `LANGUAGE`, `LANG`). Des tests vérifient
+que chaque clé existe dans toutes les langues et que chaque clé utilisée dans
+le code existe. Les messages de `tcc-cli` ne sont pas encore traduits.
+
+## Tray Qt
+
+L'icône est le logo TUXEDO monochrome (`taskbar_icon_mono.svg`), sans
+pourcentage ni statut. Le panneau du tray liste les profils avec une barre de
+recherche (tous les mots saisis doivent apparaître dans le nom).

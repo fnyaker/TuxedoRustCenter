@@ -25,7 +25,7 @@ licence **GPL-3.0-or-later** (voir `LICENSE` et `NOTICE.md` à la racine).
 - `icons/icon_profile_*.svg` et `icons/icon_displaylight.svg` (renommée pour
   suivre le préfixe `icon_`) sont des illustrations colorées copiées telles
   quelles.
-- `brand/tcc_logo.svg`, `brand/taskbar_icon_free.svg`,
+- `brand/tcc_logo.svg`, `brand/taskbar_icon_free.svg`, `brand/taskbar_icon_mono.svg` (variante monochrome dérivée de `taskbar_icon_free.svg`),
   `brand/tuxedo-logo.svg` : identité visuelle du projet. Les marques et logos
   TUXEDO restent la propriété de TUXEDO Computers GmbH ; ils sont utilisés ici
   pour désigner l'application réécrite et son matériel, pas pour suggérer une

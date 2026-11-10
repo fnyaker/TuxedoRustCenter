@@ -10,5 +10,8 @@
   "offline": "tccd is not running",
   "manual": "Manual override",
   "ac": "On AC",
-  "onBattery": "On battery"
+  "onBattery": "On battery",
+  "search": "Search profiles",
+  "noMatch": "No matching profile",
+  "cpuShort": "CPU"
 }

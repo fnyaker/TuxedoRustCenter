@@ -180,7 +180,7 @@ Item {
         id: icon
         objectName: "trayIcon"
 
-        icon.source: Qt.resolvedUrl("../../assets/brand/taskbar_icon_free.svg")
+        icon.source: Qt.resolvedUrl("../../assets/brand/taskbar_icon_mono.svg")
         tooltip: LiveData.activeName !== ""
                  ? Strings.tf("tray.tooltip", [LiveData.activeName])
                  : Strings.t("app.name")

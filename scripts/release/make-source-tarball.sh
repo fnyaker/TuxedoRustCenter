@@ -40,6 +40,7 @@ install -d -m 0755 "$work/$name"
 tcc_log "copie de l'arbre source (hors target, build, référence TCC)"
 tar -C "$REPO_ROOT" -cf - \
     --exclude=./target \
+    --exclude=./crates/tcc-gpui/target \
     --exclude=./build \
     --exclude=./dist \
     --exclude=./.git \

@@ -9,6 +9,8 @@ use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
 use serde_json::Value;
+
+use crate::i18n::{t, tf};
 use tcc_client::bus::Target;
 use tcc_client::client::Client;
 use tcc_client::stats;
@@ -218,55 +220,58 @@ async fn refresh(client: &mut Client, shared: &Arc<Mutex<Snapshot>>, full: bool)
 async fn execute(client: &mut Client, command: Command) -> (String, bool) {
     let result: anyhow::Result<String> = async {
         Ok(match command {
-            Command::UseProfile(id) => format!("Profil actif : {}", client.use_profile(&id).await?),
+            Command::UseProfile(id) => {
+                let id = client.use_profile(&id).await?;
+                tf("msg.profileActive", &[("id", &id)])
+            }
             Command::ClearTemp => {
                 client.clear_temp().await?;
-                "Retour à la bascule automatique".to_owned()
+                t("msg.backToAuto")
             }
             Command::CreateProfile(name) => {
                 client.create_profile(name).await?;
-                "Profil créé".to_owned()
+                t("msg.created")
             }
             Command::CopyProfile { from, name } => {
                 client.copy_profile(&from, name).await?;
-                "Profil copié".to_owned()
+                t("msg.copied")
             }
             Command::DeleteProfile(id) => {
                 client.delete_profile(&id).await?;
-                "Profil supprimé".to_owned()
+                t("msg.deleted")
             }
             Command::SetProfileField { profile, key, raw } => {
                 client.set_profile_field(&profile, &key, &raw).await?;
-                format!("{key} enregistré")
+                tf("msg.saved", &[("key", &key)])
             }
             Command::SetSetting { key, raw } => {
                 client.set_setting(&key, &raw).await?;
-                format!("{key} enregistré")
+                tf("msg.saved", &[("key", &key)])
             }
             Command::ManagerString { method, value } => {
                 let _: bool = client
                     .bus
                     .call(Target::Manager, method, &value.as_str())
                     .await?;
-                format!("{method} appliqué")
+                tf("msg.applied", &[("call", method)])
             }
             Command::ManagerInt { method, value } => {
                 let _: bool = client.bus.call(Target::Manager, method, &value).await?;
-                format!("{method} appliqué")
+                tf("msg.applied", &[("call", method)])
             }
             Command::FnLock(enabled) => {
                 let _: bool = client
                     .bus
                     .call(Target::Manager, "SetFnLockStatus", &enabled)
                     .await?;
-                "Fn Lock appliqué".to_owned()
+                t("msg.fnLock")
             }
             Command::SetTdp(watts) => {
                 let _: bool = client
                     .bus
                     .call(Target::AdminHw, "SetTdpValues", &watts)
                     .await?;
-                "Limites TDP appliquées".to_owned()
+                t("msg.tdp")
             }
         })
     }

@@ -60,6 +60,24 @@ Window {
     x: Screen.width - width - 12
     y: Screen.height - height - 12
 
+    /// Texte saisi dans la recherche de profils (vidé à chaque ouverture).
+    property string profileFilter: ""
+
+    /// Profils dont le nom contient tous les mots saisis (insensible à la casse).
+    readonly property var filteredProfiles: {
+        var words = panel.profileFilter.toLowerCase().split(/\s+/).filter(function(w) {
+            return w.length > 0;
+        });
+        if (words.length === 0)
+            return panel.profiles;
+        return panel.profiles.filter(function(profile) {
+            var name = String(profile.name).toLowerCase();
+            return words.every(function(w) { return name.indexOf(w) >= 0; });
+        });
+    }
+
+    onVisibleChanged: if (visible) panel.profileFilter = ""
+
     function ppdLabel() {
         if (panel.ppd === "power-saver")
             return Strings.t("settings.ppdSaver");
@@ -144,14 +162,26 @@ Window {
                 text: Strings.t("profiles.title")
             }
 
+            AppTextField {
+                id: profileSearch
+                objectName: "panelProfileSearch"
+                Layout.fillWidth: true
+                visible: panel.profiles.length > 0
+                placeholderText: Strings.t("tray.search")
+                Accessible.name: Strings.t("tray.search")
+                text: panel.profileFilter
+                onTextChanged: panel.profileFilter = text
+            }
+
             ListView {
                 id: profileList
+                objectName: "panelProfileList"
                 Layout.fillWidth: true
                 Layout.preferredHeight: Math.min(contentHeight, 176)
                 visible: panel.profiles.length > 0
                 clip: true
                 spacing: 0
-                model: panel.profiles
+                model: panel.filteredProfiles
                 boundsBehavior: Flickable.StopAtBounds
 
                 delegate: AbstractButton {
@@ -200,6 +230,14 @@ Window {
                         }
                     }
                 }
+            }
+
+            AppLabel {
+                Layout.fillWidth: true
+                visible: panel.profiles.length > 0 && panel.filteredProfiles.length === 0
+                variant: "caption"
+                secondary: true
+                text: Strings.t("tray.noMatch")
             }
 
             AppLabel {

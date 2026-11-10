@@ -10,5 +10,8 @@
   "offline": "tccd n'est pas démarré",
   "manual": "Profil forcé",
   "ac": "Sur secteur",
-  "onBattery": "Sur batterie"
+  "onBattery": "Sur batterie",
+  "search": "Rechercher un profil",
+  "noMatch": "Aucun profil correspondant",
+  "cpuShort": "CPU"
 }

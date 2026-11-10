@@ -17,6 +17,7 @@ use serde_json::Value;
 use tcc_core::ProfileId;
 
 use crate::flatten::{self, Leaf};
+use crate::i18n::{t, tf};
 use crate::worker::{Command, Handle, Snapshot};
 
 /// Pages de l'application.
@@ -40,12 +41,21 @@ impl Page {
         }
     }
 
-    const ALL: [(Self, &'static str); 4] = [
-        (Self::Dashboard, "Tableau de bord"),
-        (Self::Profiles, "Profils"),
-        (Self::Settings, "Réglages"),
-        (Self::Hardware, "Matériel"),
+    const ALL: [Self; 4] = [
+        Self::Dashboard,
+        Self::Profiles,
+        Self::Settings,
+        Self::Hardware,
     ];
+
+    fn label(self) -> String {
+        t(match self {
+            Self::Dashboard => "nav.dashboard",
+            Self::Profiles => "nav.profiles",
+            Self::Settings => "nav.settings",
+            Self::Hardware => "nav.hardware",
+        })
+    }
 }
 
 /// Application gpui.
@@ -55,6 +65,8 @@ pub struct App {
     page: Page,
     selected: Option<String>,
     inputs: HashMap<String, Entity<InputState>>,
+    /// Puissance maximale de la jauge CPU (watts), relevée automatiquement.
+    power_max: f64,
 }
 
 /// Adapte un écouteur `(valeur, fenêtre, app)` au callback `on_change`.
@@ -100,6 +112,7 @@ impl App {
                     if snap.revision != seen || snap.notice != this.snap.notice {
                         seen = snap.revision;
                         this.snap = snap;
+                        this.track_power_max();
                         cx.notify();
                     }
                 });
@@ -115,6 +128,7 @@ impl App {
             page,
             selected: None,
             inputs: HashMap::new(),
+            power_max: 15.,
         }
     }
 
@@ -158,9 +172,10 @@ fn row_with(
 
 impl Render for App {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
-        let t = cx.omarchy().clone();
+        let theme = cx.omarchy().clone();
         let mut nav = div().flex().gap(rems(0.5));
-        for (index, (page, label)) in Page::ALL.into_iter().enumerate() {
+        for (index, page) in Page::ALL.into_iter().enumerate() {
+            let label = page.label();
             let variant = if page == self.page {
                 ButtonVariant::Primary
             } else {
@@ -176,9 +191,9 @@ impl Render for App {
             );
         }
         let status = if self.snap.connected {
-            badge("tccd connecté", Status::Success, cx)
+            badge(t("status.connected"), Status::Success, cx)
         } else {
-            badge("tccd injoignable", Status::Error, cx)
+            badge(t("status.offline"), Status::Error, cx)
         };
         let header = div()
             .flex()
@@ -188,7 +203,7 @@ impl Render for App {
             .px(rems(1.25))
             .py(rems(0.75))
             .border_b_1()
-            .border_color(t.border)
+            .border_color(theme.border)
             .child(
                 div()
                     .flex()
@@ -197,8 +212,8 @@ impl Render for App {
                     .child(
                         div()
                             .font_weight(FontWeight::BOLD)
-                            .text_color(t.accent)
-                            .child("TUXEDO Control Center"),
+                            .text_color(theme.accent)
+                            .child(t("app.title")),
                     )
                     .child(nav),
             )
@@ -223,9 +238,9 @@ impl Render for App {
             .size_full()
             .flex()
             .flex_col()
-            .bg(t.background)
-            .text_color(t.foreground)
-            .font_family(t.font.clone())
+            .bg(theme.background)
+            .text_color(theme.foreground)
+            .font_family(theme.font.clone())
             .text_size(rems(0.8125))
             .child(header)
             .child(
@@ -252,7 +267,129 @@ impl Render for App {
 // Tableau de bord
 // ---------------------------------------------------------------------------
 
+/// Jauge en arc (270°, ouverte vers le bas) : `fraction` de 0 à 1, valeur au
+/// centre avec sa légende, détail (`footer`) sous la jauge. La couleur passe à l'avertissement puis au danger.
+fn gauge(
+    fraction: Option<f64>,
+    value: String,
+    caption: String,
+    footer: String,
+    cx: &GpuiApp,
+) -> gpui_kit::Div {
+    const SIZE: f32 = 132.;
+    const STROKE: f32 = 10.;
+    let theme = cx.omarchy().clone();
+    let fraction = fraction.map_or(0., |f| f.clamp(0., 1.));
+    let color = if fraction > 0.9 {
+        theme.danger
+    } else if fraction > 0.75 {
+        theme.warning
+    } else {
+        theme.accent
+    };
+    let track = theme.border;
+    let arc = move |bounds: gpui_kit::Bounds<gpui_kit::Pixels>,
+                    sweep: f64,
+                    color: gpui_kit::Hsla,
+                    window: &mut Window| {
+        if sweep <= 0. {
+            return;
+        }
+        let center = bounds.center();
+        let radius =
+            f64::from(bounds.size.width.min(bounds.size.height)) / 2. - f64::from(STROKE) / 2. - 1.;
+        let steps = ((sweep / 270.) * 72.).ceil().max(2.) as usize;
+        let mut builder = gpui_kit::PathBuilder::stroke(gpui_kit::px(STROKE));
+        for step in 0..=steps {
+            let angle = (135. + sweep * step as f64 / steps as f64).to_radians();
+            let point = gpui_kit::point(
+                center.x + gpui_kit::px((radius * angle.cos()) as f32),
+                center.y + gpui_kit::px((radius * angle.sin()) as f32),
+            );
+            if step == 0 {
+                builder.move_to(point);
+            } else {
+                builder.line_to(point);
+            }
+        }
+        if let Ok(path) = builder.build() {
+            window.paint_path(path, color);
+        }
+    };
+    div()
+        .flex()
+        .flex_col()
+        .items_center()
+        .child(
+            div()
+                .relative()
+                .size(gpui_kit::px(SIZE))
+                .child(
+                    gpui_kit::canvas(
+                        |_, _, _| (),
+                        move |bounds, (), window, _| {
+                            arc(bounds, 270., track, window);
+                            arc(bounds, 270. * fraction, color, window);
+                        },
+                    )
+                    .size_full(),
+                )
+                .child(
+                    div()
+                        .absolute()
+                        .top_0()
+                        .left_0()
+                        .size_full()
+                        .flex()
+                        .flex_col()
+                        .items_center()
+                        .justify_center()
+                        .child(
+                            div()
+                                .text_size(rems(1.25))
+                                .font_weight(FontWeight::BOLD)
+                                .child(value),
+                        )
+                        .child(
+                            div()
+                                .text_size(rems(0.6875))
+                                .text_color(theme.secondary)
+                                .child(caption),
+                        ),
+                ),
+        )
+        .child(
+            div()
+                .text_size(rems(0.6875))
+                .text_color(theme.secondary)
+                .child(footer),
+        )
+}
+
+/// Température affichée en °C ou °F selon le réglage.
+fn fmt_temp(celsius: Option<f64>, fahrenheit: bool) -> String {
+    match celsius {
+        None => "—".to_owned(),
+        Some(c) if fahrenheit => format!("{:.0} °F", c * 9. / 5. + 32.),
+        Some(c) => format!("{c:.0} °C"),
+    }
+}
+
 impl App {
+    /// Puissance maximale de la jauge : au moins 15 W, au moins le TDP connu,
+    /// puis relevée par paliers de 5 W dès qu'une mesure la dépasse.
+    fn track_power_max(&mut self) {
+        let tdp = self.snap.hardware["odm"]["tdp"]
+            .as_array()
+            .and_then(|values| values.iter().filter_map(Value::as_f64).reduce(f64::max))
+            .unwrap_or(0.);
+        let observed = self.snap.hardware["sensors"]["cpu"]["packagePowerW"]
+            .as_f64()
+            .unwrap_or(0.);
+        let wanted = (observed / 5.).ceil() * 5.;
+        self.power_max = self.power_max.max(15.).max(tdp).max(wanted);
+    }
+
     fn dashboard(&mut self, cx: &mut Context<Self>) -> gpui_kit::Div {
         let active = self.active_profile_id();
         let name = self.snap.state["activeProfile"]["name"]
@@ -268,6 +405,7 @@ impl App {
             .unwrap_or("—")
             .to_owned();
         let manual = self.snap.state["manualOverride"].as_bool().unwrap_or(false);
+        let fahrenheit = self.snap.settings["fahrenheit"].as_bool().unwrap_or(false);
 
         let mut switcher = div().flex().flex_wrap().gap(rems(0.5));
         for (index, profile) in self.snap.profiles.iter().enumerate() {
@@ -282,20 +420,50 @@ impl App {
                 cx.listener(move |this, _, _, _| this.handle.send(Command::UseProfile(id.clone()))),
             ));
         }
-        let auto = button("auto", "Automatique", ButtonVariant::Secondary, cx)
+        let auto = button("auto", t("dash.auto"), ButtonVariant::Secondary, cx)
             .disabled(!manual)
             .on_click(cx.listener(|this, _, _, _| this.handle.send(Command::ClearTemp)));
 
         let cpu_sensors = &self.snap.hardware["sensors"]["cpu"];
         let usage = self.snap.cpu_usage;
+        let cpu_power = cpu_sensors["packagePowerW"].as_f64();
+        let cpu_temp = cpu_sensors["temperatureC"].as_f64();
         let battery = &self.snap.battery;
         let percent = battery["percent"].as_f64();
-        let mut battery_panel = panel("Batterie", cx);
+
+        let gauges = div()
+            .flex()
+            .flex_wrap()
+            .justify_center()
+            .gap(rems(1.5))
+            .child(gauge(
+                usage.map(|u| u / 100.),
+                usage.map_or_else(|| "—".to_owned(), |u| format!("{u:.0} %")),
+                t("dash.usage"),
+                String::new(),
+                cx,
+            ))
+            .child(gauge(
+                cpu_power.map(|w| w / self.power_max),
+                cpu_power.map_or_else(|| "—".to_owned(), |w| format!("{w:.1} W")),
+                t("dash.power"),
+                format!("max {:.0} W", self.power_max),
+                cx,
+            ))
+            .child(gauge(
+                cpu_temp.map(|c| c / 100.),
+                fmt_temp(cpu_temp, fahrenheit),
+                t("dash.temperature"),
+                format!("max {}", fmt_temp(Some(100.), fahrenheit)),
+                cx,
+            ));
+
+        let mut battery_panel = panel(t("dash.batteryCard"), cx);
         if battery["present"] == true {
             battery_panel = battery_panel
                 .child(progress("battery", percent.unwrap_or(0.) as f32, cx))
                 .child(row_with(
-                    "Charge",
+                    t("dash.charge"),
                     format!(
                         "{} % · {}",
                         percent.map_or_else(|| "—".to_owned(), |p| format!("{p:.0}")),
@@ -304,34 +472,33 @@ impl App {
                     cx,
                 ))
                 .child(row_with(
-                    "Puissance",
+                    t("dash.power"),
                     fmt_opt(battery["powerW"].as_f64(), "W"),
                     cx,
                 ));
         } else {
-            battery_panel = battery_panel.child("Aucune batterie détectée");
+            battery_panel = battery_panel.child(t("dash.noBattery"));
         }
 
-        let mut fans = panel("Ventilateurs", cx);
+        let mut fans = panel(t("dash.fans"), cx);
         match self.snap.fans["fans"].as_array().filter(|f| !f.is_empty()) {
             Some(list) => {
+                let mut row = div().flex().flex_wrap().justify_center().gap(rems(1.5));
                 for fan in list {
-                    fans = fans.child(row_with(
-                        fan["label"].as_str().unwrap_or("fan").to_owned(),
-                        format!(
-                            "{} % · {}",
-                            fan["speed"]
-                                .as_f64()
-                                .map_or_else(|| "—".into(), |v| format!("{v:.0}")),
-                            fan["temp"]
-                                .as_f64()
-                                .map_or_else(|| "—".into(), |v| format!("{v:.0} °C"))
-                        ),
+                    let speed = fan["speed"].as_f64();
+                    let label = fan["label"].as_str().unwrap_or("fan").to_owned();
+                    let temp = fmt_temp(fan["temp"].as_f64(), fahrenheit);
+                    row = row.child(gauge(
+                        speed.map(|v| v / 100.),
+                        speed.map_or_else(|| "—".to_owned(), |v| format!("{v:.0} %")),
+                        t("dash.fanSpeed"),
+                        format!("{label} · {temp}"),
                         cx,
                     ));
                 }
+                fans = fans.child(row);
             }
-            None => fans = fans.child("Aucun ventilateur contrôlable"),
+            None => fans = fans.child(t("dash.noFans")),
         }
 
         div()
@@ -339,7 +506,7 @@ impl App {
             .flex_col()
             .gap(rems(1.))
             .child(
-                panel("Profil actif", cx)
+                panel(t("dash.activeProfile"), cx)
                     .child(
                         div()
                             .flex()
@@ -352,35 +519,29 @@ impl App {
                                     .child(name),
                             )
                             .child(badge(
-                                if power == "ac" { "Secteur" } else { "Batterie" },
+                                if power == "ac" {
+                                    t("dash.ac")
+                                } else {
+                                    t("dash.battery")
+                                },
                                 Status::Neutral,
                                 cx,
                             ))
-                            .child(badge(format!("PPD {ppd}"), Status::Neutral, cx))
+                            .child(badge(
+                                tf("dash.ppd", &[("value", &ppd)]),
+                                Status::Neutral,
+                                cx,
+                            ))
                             .when(manual, |row| {
-                                row.child(badge("Manuel", Status::Warning, cx))
+                                row.child(badge(t("dash.manual"), Status::Warning, cx))
                             }),
                     )
                     .child(switcher)
                     .child(auto),
             )
-            .child(
-                panel("Processeur", cx)
-                    .child(progress("cpu", usage.unwrap_or(0.) as f32, cx))
-                    .child(row_with("Charge", fmt_opt(usage, "%"), cx))
-                    .child(row_with(
-                        "Puissance",
-                        fmt_opt(cpu_sensors["packagePowerW"].as_f64(), "W"),
-                        cx,
-                    ))
-                    .child(row_with(
-                        "Température",
-                        fmt_opt(cpu_sensors["temperatureC"].as_f64(), "°C"),
-                        cx,
-                    )),
-            )
-            .child(battery_panel)
+            .child(panel(t("dash.cpu"), cx).child(gauges))
             .child(fans)
+            .child(battery_panel)
     }
 }
 
@@ -443,7 +604,7 @@ impl App {
                     .child(
                         button(
                             eid(scope, "apply", index),
-                            "Appliquer",
+                            t("common.apply"),
                             ButtonVariant::Outline,
                             cx,
                         )
@@ -498,14 +659,18 @@ impl App {
             .child(separator(cx))
             .child(input("new-profile-input", &new_name, window, cx))
             .child(
-                button("create-profile", "Créer", ButtonVariant::Secondary, cx).on_click(
-                    cx.listener(move |this, _, _, cx| {
-                        let name = create_target.read(cx).value().trim().to_owned();
-                        if !name.is_empty() {
-                            this.handle.send(Command::CreateProfile(name));
-                        }
-                    }),
-                ),
+                button(
+                    "create-profile",
+                    t("common.create"),
+                    ButtonVariant::Secondary,
+                    cx,
+                )
+                .on_click(cx.listener(move |this, _, _, cx| {
+                    let name = create_target.read(cx).value().trim().to_owned();
+                    if !name.is_empty() {
+                        this.handle.send(Command::CreateProfile(name));
+                    }
+                })),
             );
 
         let mut detail = div().flex().flex_col().gap(rems(0.75)).flex_1().min_w_0();
@@ -514,11 +679,7 @@ impl App {
             .and_then(|id| self.snap.profiles.iter().find(|p| p["id"] == id).cloned())
         {
             None => {
-                detail = detail.child(empty_state(
-                    "Aucun profil",
-                    "Le daemon n'a renvoyé aucun profil.",
-                    cx,
-                ));
+                detail = detail.child(empty_state(t("profiles.none"), t("profiles.noneHint"), cx));
             }
             Some(profile) => {
                 let id = profile["id"].as_str().unwrap_or_default().to_owned();
@@ -528,36 +689,48 @@ impl App {
                 let use_id = id.clone();
                 let copy_id = id.clone();
                 let del_id = id.clone();
-                let copy_name = format!("{name} (copie)");
+                let copy_name = tf("common.copySuffix", &[("name", &name)]);
                 let mut actions = div()
                     .flex()
                     .gap(rems(0.5))
                     .child(
-                        button("profile-use", "Activer", ButtonVariant::Primary, cx).on_click(
-                            cx.listener(move |this, _, _, _| {
-                                this.handle.send(Command::UseProfile(use_id.clone()));
-                            }),
-                        ),
+                        button(
+                            "profile-use",
+                            t("common.activate"),
+                            ButtonVariant::Primary,
+                            cx,
+                        )
+                        .on_click(cx.listener(move |this, _, _, _| {
+                            this.handle.send(Command::UseProfile(use_id.clone()));
+                        })),
                     )
                     .child(
-                        button("profile-copy", "Copier", ButtonVariant::Secondary, cx).on_click(
-                            cx.listener(move |this, _, _, _| {
-                                this.handle.send(Command::CopyProfile {
-                                    from: copy_id.clone(),
-                                    name: copy_name.clone(),
-                                });
-                            }),
-                        ),
+                        button(
+                            "profile-copy",
+                            t("common.copy"),
+                            ButtonVariant::Secondary,
+                            cx,
+                        )
+                        .on_click(cx.listener(move |this, _, _, _| {
+                            this.handle.send(Command::CopyProfile {
+                                from: copy_id.clone(),
+                                name: copy_name.clone(),
+                            });
+                        })),
                     );
                 if !preset {
                     actions = actions.child(
-                        button("profile-delete", "Supprimer", ButtonVariant::Danger, cx).on_click(
-                            cx.listener(move |this, _, _, cx| {
-                                this.handle.send(Command::DeleteProfile(del_id.clone()));
-                                this.selected = None;
-                                cx.notify();
-                            }),
-                        ),
+                        button(
+                            "profile-delete",
+                            t("common.delete"),
+                            ButtonVariant::Danger,
+                            cx,
+                        )
+                        .on_click(cx.listener(move |this, _, _, cx| {
+                            this.handle.send(Command::DeleteProfile(del_id.clone()));
+                            this.selected = None;
+                            cx.notify();
+                        })),
                     );
                 }
                 detail = detail
@@ -573,19 +746,15 @@ impl App {
                                     .child(name),
                             )
                             .when(preset, |row| {
-                                row.child(badge("Preset", Status::Neutral, cx))
+                                row.child(badge(t("profiles.preset"), Status::Neutral, cx))
                             })
                             .when(id == active, |row| {
-                                row.child(badge("Actif", Status::Success, cx))
+                                row.child(badge(t("profiles.active"), Status::Success, cx))
                             }),
                     )
                     .child(actions);
                 if preset {
-                    detail = detail.child(alert(
-                        "Preset en lecture seule : copiez-le pour le modifier.",
-                        Status::Neutral,
-                        cx,
-                    ));
+                    detail = detail.child(alert(t("profiles.readOnly"), Status::Neutral, cx));
                 }
                 let leaves = flatten::leaves(&profile, &["id"]);
                 let profile_id = id.clone();
@@ -596,7 +765,7 @@ impl App {
                 });
                 let scope = format!("profile-{id}");
                 let rows = self.editor(&scope, leaves, !preset, make, window, cx);
-                detail = detail.child(panel("Paramètres", cx).child(rows));
+                detail = detail.child(panel(t("profiles.parameters"), cx).child(rows));
             }
         }
         div().flex().gap(rems(1.25)).child(list).child(detail)
@@ -607,11 +776,11 @@ impl App {
         let make: MakeCommand = Rc::new(|key, raw| Command::SetSetting { key, raw });
         let rows = self.editor("settings", leaves, true, make, window, cx);
         div().flex().flex_col().gap(rems(1.)).child(
-            panel("Réglages", cx)
+            panel(t("settings.title"), cx)
                 .child(
                     div()
                         .text_color(cx.omarchy().secondary)
-                        .child("Chaque modification est enregistrée via tccd-admin (polkit)."),
+                        .child(t("settings.hint")),
                 )
                 .child(rows),
         )
@@ -676,11 +845,11 @@ impl App {
     fn hardware(&mut self, window: &mut Window, cx: &mut Context<Self>) -> gpui_kit::Div {
         let hw = self.snap.hardware.clone();
         let charging = &hw["charging"];
-        let mut charge = panel("Charge de la batterie", cx);
+        let mut charge = panel(t("hw.charging"), cx);
         if charging["available"] == true {
             if let Some(row) = self.choice_row(
                 "charge-profile",
-                "Profil de charge",
+                &t("hw.chargeProfile"),
                 &charging["profiles"],
                 &charging["profile"],
                 "SetChargingProfile",
@@ -690,7 +859,7 @@ impl App {
             }
             if let Some(row) = self.choice_row(
                 "charge-priority",
-                "Priorité",
+                &t("hw.chargePriority"),
                 &charging["priorities"],
                 &charging["priority"],
                 "SetChargingPriority",
@@ -714,22 +883,28 @@ impl App {
                         .flex()
                         .items_center()
                         .gap(rems(0.5))
-                        .child("Début")
+                        .child(t("hw.start"))
                         .child(div().w(rems(6.)).child(input(
                             "charge-start-in",
                             &start,
                             window,
                             cx,
                         )))
-                        .child("Fin")
+                        .child(t("hw.end"))
                         .child(
                             div()
                                 .w(rems(6.))
                                 .child(input("charge-end-in", &end, window, cx)),
                         )
                         .child(
-                            button("charge-apply", "Appliquer", ButtonVariant::Outline, cx)
-                                .on_click(cx.listener(move |this, _, _, cx| {
+                            button(
+                                "charge-apply",
+                                t("common.apply"),
+                                ButtonVariant::Outline,
+                                cx,
+                            )
+                            .on_click(cx.listener(
+                                move |this, _, _, cx| {
                                     let parse = |state: &Entity<InputState>, cx: &GpuiApp| {
                                         state.read(cx).value().trim().parse::<i32>().ok()
                                     };
@@ -748,22 +923,23 @@ impl App {
                                     for (method, value) in ops {
                                         this.handle.send(Command::ManagerInt { method, value });
                                     }
-                                })),
+                                },
+                            )),
                         ),
                 );
             }
         } else {
-            charge = charge.child("Contrôle de charge non disponible sur cette machine");
+            charge = charge.child(t("hw.chargeUnavailable"));
         }
 
-        let mut misc = panel("Divers", cx);
+        let mut misc = panel(t("hw.misc"), cx);
         let fn_lock = &hw["fnLock"];
         if fn_lock["supported"] == true {
             let handle = self.handle.clone();
             misc = misc.child(
-                switch("fn-lock", "Verrou Fn", fn_lock["enabled"] == true, cx).on_change(change(
-                    move |value: &bool, _, _| handle.send(Command::FnLock(*value)),
-                )),
+                switch("fn-lock", t("hw.fnLock"), fn_lock["enabled"] == true, cx).on_change(
+                    change(move |value: &bool, _, _| handle.send(Command::FnLock(*value))),
+                ),
             );
         }
         let odm = &hw["odm"];
@@ -779,15 +955,15 @@ impl App {
                     .flex()
                     .items_center()
                     .gap(rems(0.5))
-                    .child("TDP (W)")
+                    .child(t("hw.tdp"))
                     .child(
                         div()
                             .w(rems(12.))
                             .child(input("tdp-in", &state, window, cx)),
                     )
                     .child(
-                        button("tdp-apply", "Appliquer", ButtonVariant::Outline, cx).on_click(
-                            cx.listener(move |this, _, _, cx| {
+                        button("tdp-apply", t("common.apply"), ButtonVariant::Outline, cx)
+                            .on_click(cx.listener(move |this, _, _, cx| {
                                 let watts: Vec<i32> = target
                                     .read(cx)
                                     .value()
@@ -795,16 +971,15 @@ impl App {
                                     .filter_map(|w| w.parse().ok())
                                     .collect();
                                 this.handle.send(Command::SetTdp(watts));
-                            }),
-                        ),
+                            })),
                     ),
             );
         }
         if fn_lock["supported"] != true && odm["tdpAvailable"] != true {
-            misc = misc.child("Aucune fonction supplémentaire disponible");
+            misc = misc.child(t("hw.nothing"));
         }
 
-        let mut gpus = panel("Capteurs", cx);
+        let mut gpus = panel(t("hw.sensors"), cx);
         match hw["sensors"]["gpus"].as_array().filter(|g| !g.is_empty()) {
             Some(list) => {
                 for gpu in list {
@@ -819,7 +994,7 @@ impl App {
                     ));
                 }
             }
-            None => gpus = gpus.child("Aucun GPU détecté ou capteurs inactifs"),
+            None => gpus = gpus.child(t("hw.noGpu")),
         }
         div()
             .flex()

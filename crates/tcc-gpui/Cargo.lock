@@ -6316,7 +6316,7 @@ dependencies = [
 
 [[package]]
 name = "tcc-client"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anyhow",
  "serde",
@@ -6328,7 +6328,7 @@ dependencies = [
 
 [[package]]
 name = "tcc-core"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "libc",
  "serde",
@@ -6339,7 +6339,7 @@ dependencies = [
 
 [[package]]
 name = "tcc-gpui"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "anyhow",
  "gpui-kit",
@@ -6352,7 +6352,7 @@ dependencies = [
 
 [[package]]
 name = "tcc-ipc"
-version = "0.1.1"
+version = "0.1.2"
 dependencies = [
  "serde",
  "serde_json",

@@ -1,0 +1,17 @@
+{
+  "title": "TUXEDO",
+  "cpu": "CPU-Last",
+  "cpuPower": "CPU-Leistung",
+  "cpuTemp": "CPU-Temperatur",
+  "battery": "Akku",
+  "batteryPower": "Akku-Leistung",
+  "profile": "Profil",
+  "auto": "Automatisch",
+  "offline": "tccd läuft nicht",
+  "manual": "Profil erzwungen",
+  "ac": "Netzbetrieb",
+  "onBattery": "Akkubetrieb",
+  "search": "Profile suchen",
+  "noMatch": "Kein passendes Profil",
+  "cpuShort": "CPU"
+}

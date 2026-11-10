@@ -2,7 +2,7 @@
   "schemaVersion": 1,
   "id": "tuxedo.tcc-stats",
   "name": "TUXEDO Control Center",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "author": "TuxedoRustCenter contributors",
   "description": "CPU load, battery power, active profile and profile switcher for TUXEDO laptops",
   "kinds": [

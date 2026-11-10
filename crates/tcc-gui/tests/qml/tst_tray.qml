@@ -294,6 +294,21 @@ TestCase {
         verify(findChild(panel, "panelAutostartToggle") !== null);
     }
 
+    function test_compactPanelFiltersProfiles() {
+        var tray = createTemporaryObject(trayComponent, testCase);
+        var panel = findChild(tray, "trayPanel");
+        verify(panel !== null);
+        compare(panel.filteredProfiles.length, 2);
+        panel.profileFilter = "OFF";
+        compare(panel.filteredProfiles.length, 1);
+        compare(panel.filteredProfiles[0].name, "Office");
+        panel.profileFilter = "zzz";
+        compare(panel.filteredProfiles.length, 0);
+        panel.profileFilter = "  ";
+        compare(panel.filteredProfiles.length, 2);
+        verify(findChild(panel, "panelProfileSearch") !== null);
+    }
+
     function test_compactPanelTogglesAreWired() {
         SettingsData.connected = true;
         SettingsData.error = "";

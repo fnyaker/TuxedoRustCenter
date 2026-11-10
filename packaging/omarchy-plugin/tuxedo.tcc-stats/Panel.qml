@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Effects
 import Quickshell
 import Quickshell.Io
 import qs.Commons
@@ -82,16 +83,37 @@ Panel {
     onExited: { root.refresh(); root.refreshProfiles() }
   }
 
+  // Icon only by default (the TUXEDO logo, tinted like the other bar icons).
+  // `showLabel: true` in the widget's shell.json entry adds "CPU 12% · 8.4W".
+  readonly property bool showLabel: setting("showLabel", false) === true
+
   BarIconButton {
     id: button
     anchors.fill: parent
     bar: root.bar
-    // Pas de glyphe : la police des icônes de la barre (omarchy.ttf) ne couvre
-    // pas les glyphes Nerd Font ; le libellé suffit.
-    text: ""
-    labelText: Model.barLabel(root.stats)
+    labelText: root.showLabel ? Model.barLabel(root.stats, strings.t("cpuShort")) : ""
     slotSize: Style.bar.iconSlot * (labelText !== "" && !vertical ? 3 : 1)
     tooltipText: ""
+    iconComponent: Component {
+      Item {
+        Image {
+          id: logo
+          anchors.centerIn: parent
+          width: button.iconSize
+          height: width * 0.95
+          source: Qt.resolvedUrl("logo.svg")
+          sourceSize.width: width * 2
+          sourceSize.height: height * 2
+          fillMode: Image.PreserveAspectFit
+          smooth: true
+          layer.enabled: true
+          layer.effect: MultiEffect {
+            colorization: 1.0
+            colorizationColor: root.bar ? root.bar.foreground : Commons.Color.foreground
+          }
+        }
+      }
+    }
     onPressed: function(b) { root.toggle() }
   }
 
@@ -176,33 +198,77 @@ Panel {
             fontFamily: root.bar.fontFamily
           }
 
-          Flow {
+          // Search box: filters the list below as you type.
+          Rectangle {
             width: parent.width
-            spacing: Style.space(6)
+            height: Style.space(30)
+            radius: Style.cornerRadius
+            color: "transparent"
+            border.width: 1
+            border.color: Qt.rgba(root.bar.foreground.r, root.bar.foreground.g, root.bar.foreground.b, 0.25)
 
-            Repeater {
-              model: root.profileList
-              Button {
-                required property var modelData
-                text: modelData.name
-                fontSize: Style.font.bodySmall
-                foreground: root.bar.foreground
-                fontFamily: root.bar.fontFamily
-                bordered: true
-                active: modelData.active
-                onClicked: root.useProfile(modelData.id)
-              }
+            FilterInput {
+              id: filter
+              anchors.fill: parent
+              anchors.leftMargin: Style.space(10)
+              anchors.rightMargin: Style.space(10)
+              verticalAlignment: TextInput.AlignVCenter
+              color: root.bar.foreground
+              font.family: root.bar.fontFamily
+              font.pixelSize: Style.font.bodySmall
+              keyHandler: null
             }
 
-            Button {
-              visible: root.online && root.stats.manualOverride === true
-              text: strings.t("auto")
+            Text {
+              anchors.fill: filter
+              verticalAlignment: Text.AlignVCenter
+              visible: filter.text === ""
+              textFormat: Text.PlainText
+              text: strings.t("search")
+              color: root.bar.foreground
+              opacity: 0.45
+              font.family: root.bar.fontFamily
+              font.pixelSize: Style.font.bodySmall
+            }
+          }
+
+          ListView {
+            id: profileView
+            width: parent.width
+            height: Math.min(contentHeight, Style.space(168))
+            clip: true
+            interactive: contentHeight > height
+            boundsBehavior: Flickable.StopAtBounds
+            model: Model.filterProfiles(root.profileList, filter.text)
+
+            delegate: Button {
+              required property var modelData
+              width: ListView.view ? ListView.view.width : 0
+              text: modelData.name
+              leftAlign: true
               fontSize: Style.font.bodySmall
               foreground: root.bar.foreground
               fontFamily: root.bar.fontFamily
-              bordered: true
-              onClicked: root.clearOverride()
+              active: modelData.active
+              onClicked: root.useProfile(modelData.id)
             }
+          }
+
+          PlainText {
+            width: parent.width
+            visible: profileView.count === 0
+            opacity: 0.6
+            text: strings.t("noMatch")
+          }
+
+          Button {
+            visible: root.online && root.stats.manualOverride === true
+            text: strings.t("auto")
+            fontSize: Style.font.bodySmall
+            foreground: root.bar.foreground
+            fontFamily: root.bar.fontFamily
+            bordered: true
+            onClicked: root.clearOverride()
           }
         }
       }

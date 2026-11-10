@@ -11,8 +11,12 @@
 # Indépendant de --with admin : ce dernier n'installe PAS Admin.Hw.
 %bcond_with admin_hw
 
+# Interface gpui (style Omarchy), workspace séparé (rustc >= 1.92). Activer avec
+#   rpmbuild --with gpui ...
+%bcond_with gpui
+
 Name:           tuxedo-rust-center
-Version:        0.1.1
+Version:        0.1.2
 Release:        1%{?dist}
 Summary:        Native Qt 6 TUXEDO Control Center rewrite
 
@@ -81,6 +85,9 @@ runtime.
 %set_build_flags
 export SOURCE_DATE_EPOCH=%{?source_date_epoch:%{source_date_epoch}}%{!?source_date_epoch:1793923200}
 cargo build --release --locked
+%if %{with gpui}
+cargo build --release --locked --manifest-path crates/tcc-gpui/Cargo.toml
+%endif
 
 %install
 rm -rf %{buildroot}
@@ -91,6 +98,9 @@ export TCC_WITH_ADMIN=0
 %endif
 %if %{with admin_hw}
 export TCC_WITH_ADMIN_HW=1
+%endif
+%if %{with gpui}
+export TCC_WITH_GPUI=1
 %endif
 scripts/release/install-tree.sh %{buildroot}
 
@@ -118,6 +128,10 @@ TCC_VALIDATE_STRICT=0 scripts/release/validate.sh --tree %{buildroot}
 %dir %{_libexecdir}/tuxedo-rust-center
 %{_libexecdir}/tuxedo-rust-center/tccd
 %{_libexecdir}/tuxedo-rust-center/tccd-user
+%{_libexecdir}/tuxedo-rust-center/tcc-gui-qt
+%if %{with gpui}
+%{_libexecdir}/tuxedo-rust-center/tcc-gui-gpui
+%endif
 %if %{with admin}
 %{_libexecdir}/tuxedo-rust-center/tccd-admin
 %{_unitdir}/tccd-admin.service
@@ -141,6 +155,7 @@ TCC_VALIDATE_STRICT=0 scripts/release/validate.sh --tree %{buildroot}
 %{_datadir}/metainfo/com.tuxedocomputers.TuxedoRustCenter.metainfo.xml
 %{_datadir}/tuxedo-rust-center/qml
 %{_datadir}/tuxedo-rust-center/assets
+%{_datadir}/tuxedo-rust-center/omarchy-plugin
 
 %post
 # Pas de %systemd_post inconditionnel : une installation hors paquet de TCC
@@ -180,6 +195,11 @@ fi
 %systemd_postun_with_restart tccd.service
 
 %changelog
+* Tue Nov 10 2026 TuxedoRustCenter contributors <maintainers@tuxedorustcenter.invalid> - 0.1.2-1
+- CLI complète (tcc-cli), lanceur d'interface auto/qt6/gpui, plugin de barre
+  Omarchy, tray monochrome avec recherche de profils ; interface gpui avec
+  --with gpui.
+
 * Tue Nov 10 2026 TuxedoRustCenter contributors <maintainers@tuxedorustcenter.invalid> - 0.1.1-1
 - tccd-admin (phase 1) installé par défaut ; --without admin pour l'exclure.
 

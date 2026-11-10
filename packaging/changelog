@@ -1,3 +1,12 @@
+tuxedo-rust-center (0.1.2-1) noble; urgency=medium
+
+  * CLI complète (tcc-cli) : profils, réglages, charge, TDP, clavier, stats.
+  * Lanceur tuxedo-rust-center : interface auto, qt6 ou gpui.
+  * Plugin de barre Omarchy (tcc-cli omarchy-plugin install).
+  * Tray : logo TUXEDO monochrome, liste de profils avec recherche.
+
+ -- TuxedoRustCenter contributors <maintainers@tuxedorustcenter.invalid>  Tue, 10 Nov 2026 13:00:00 +0000
+
 tuxedo-rust-center (0.1.1-1) noble; urgency=medium
 
   * tccd-admin (phase 1) installé par défaut dans les paquets deb, rpm et

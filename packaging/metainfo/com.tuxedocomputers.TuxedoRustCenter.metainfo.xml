@@ -81,6 +81,11 @@
   <content_rating type="oars-1.1"/>
 
   <releases>
+    <release version="0.1.2" date="2026-11-10" type="development">
+      <description>
+        <p>CLI complète, choix de l'interface (Qt 6 ou gpui), plugin de barre Omarchy et tray monochrome avec recherche de profils.</p>
+      </description>
+    </release>
     <release version="0.1.1" date="2026-11-10" type="development">
       <description>
         <p>Le service administratif tccd-admin est installé par défaut dans tous les paquets.</p>

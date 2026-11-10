@@ -19,7 +19,7 @@ function number(value, decimals, unit) {
 }
 
 // Short label for the bar: CPU load and battery power.
-function barLabel(stats) {
+function barLabel(stats, cpuWord) {
   if (!stats || !stats.daemon) return ""
   var parts = []
   if (stats.cpu && typeof stats.cpu.usagePercent === "number")
@@ -27,7 +27,7 @@ function barLabel(stats) {
   if (stats.battery && stats.battery.present && typeof stats.battery.powerW === "number"
       && stats.battery.powerW > 0.05)
     parts.push(stats.battery.powerW.toFixed(1) + "W")
-  return parts.length ? "CPU " + parts.join(" · ") : ""
+  return parts.length ? (cpuWord || "CPU") + " " + parts.join(" · ") : ""
 }
 
 // Profiles as [{id, name, active}], active first match wins; empty on bad data.
@@ -40,4 +40,14 @@ function profiles(list) {
       out.push({ id: p.id, name: p.name, active: p.active === true })
   }
   return out
+}
+
+// Profiles whose name contains every word of `query` (case-insensitive).
+function filterProfiles(list, query) {
+  var words = String(query || "").toLowerCase().split(/\s+/).filter(function(w) { return w.length > 0 })
+  if (words.length === 0) return list || []
+  return (list || []).filter(function(p) {
+    var name = String(p.name).toLowerCase()
+    return words.every(function(w) { return name.indexOf(w) >= 0 })
+  })
 }

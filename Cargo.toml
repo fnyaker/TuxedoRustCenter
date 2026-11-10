@@ -13,6 +13,10 @@ members = [
     "crates/tcc-cli",
 ]
 
+# tcc-gpui a son propre workspace : gpui embarque zbus avec le backend async-io,
+# incompatible avec le backend tokio du reste du projet (unification de features).
+exclude = ["crates/tcc-gpui"]
+
 [workspace.package]
 version = "0.1.1"
 edition = "2024"

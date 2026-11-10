@@ -1,0 +1,30 @@
+[package]
+name = "tcc-gpui"
+version = "0.1.1"
+edition = "2024"
+publish = false
+# gpui exige une toolchain récente ; le reste du workspace reste en 1.85.
+rust-version = "1.92"
+license = "GPL-3.0-or-later"
+description = "Interface gpui (style Omarchy) de TuxedoRustCenter"
+
+# Workspace propre : voir le commentaire de `exclude` dans le Cargo.toml racine.
+[workspace]
+
+[[bin]]
+name = "tcc-gpui"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1.0"
+gpui-kit = { version = "=0.7.0", default-features = false }
+gpui-omarchy = "0.2.0"
+serde_json = "1.0"
+tcc-client = { path = "../tcc-client", default-features = false, features = ["async-io"] }
+tcc-core = { path = "../tcc-core" }
+tokio = { version = "1.45", features = ["rt", "time"] }
+
+[profile.release]
+lto = "thin"
+codegen-units = 1
+strip = "symbols"

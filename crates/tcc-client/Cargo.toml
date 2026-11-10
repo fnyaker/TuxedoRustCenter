@@ -7,13 +7,21 @@ rust-version.workspace = true
 license.workspace = true
 description = "Client D-Bus et opérations partagées de TuxedoRustCenter"
 
+[features]
+# Backend zbus. `tokio` (défaut) pour le CLI et les services ; `async-io` pour
+# les processus qui embarquent un autre exécuteur (gpui), car zbus ne tolère
+# qu'un backend par processus.
+default = ["tokio"]
+tokio = ["zbus/tokio"]
+async-io = ["zbus/async-io"]
+
 [dependencies]
 anyhow.workspace = true
 serde.workspace = true
 serde_json.workspace = true
 tcc-core = { path = "../tcc-core" }
 tcc-ipc = { path = "../tcc-ipc" }
-zbus.workspace = true
+zbus = { version = "5.5", default-features = false }
 
 [dev-dependencies]
 tempfile.workspace = true

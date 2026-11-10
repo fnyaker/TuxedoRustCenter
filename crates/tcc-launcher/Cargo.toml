@@ -1,0 +1,19 @@
+[package]
+name = "tcc-launcher"
+version.workspace = true
+edition.workspace = true
+publish = false
+rust-version.workspace = true
+license.workspace = true
+description = "Lanceur TuxedoRustCenter : choisit l'interface (auto, qt6, gpui)"
+
+[features]
+default = []
+# Overrides de développement : `TCC_GUI_QT_BIN`, `TCC_GUI_GPUI_BIN`.
+# Absente des paquets release : une variable d'environnement ne peut pas
+# détourner le lanceur installé vers un binaire arbitraire.
+dev-overrides = []
+
+[[bin]]
+name = "tuxedo-rust-center"
+path = "src/main.rs"

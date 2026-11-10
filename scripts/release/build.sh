@@ -11,6 +11,8 @@
 #   --with-admin     construit/installe tccd-admin (phase 1, binaire requis)
 #   --with-admin-hw  construit/installe tccd-admin-hw (TDP/ODM/cTGP, phase 2,
 #                    binaire requis ; indépendant de --with-admin)
+#   --with-gpui      construit/installe l'interface gpui (workspace séparé,
+#                    rustc >= 1.92) ; sinon seule l'interface Qt 6 est livrée
 #   --source         produit l'archive source reproductible
 #   --rpm            produit aussi le RPM (rpmbuild requis)
 #   --arch           produit aussi le paquet Arch (makepkg requis, non root)
@@ -32,6 +34,7 @@ SCRIPT_DIR=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P)
 
 WITH_ADMIN=1
 WITH_ADMIN_HW=0
+WITH_GPUI=0
 DO_DEB=1
 DO_RPM=0
 DO_ARCH=0
@@ -44,6 +47,7 @@ while [ $# -gt 0 ]; do
         --with-admin) WITH_ADMIN=1 ;;
         --without-admin) WITH_ADMIN=0 ;;
         --with-admin-hw) WITH_ADMIN_HW=1 ;;
+        --with-gpui) WITH_GPUI=1 ;;
         --deb) DO_DEB=1 ;;
         --no-deb) DO_DEB=0 ;;
         --source) DO_SOURCE=1 ;;
@@ -78,6 +82,10 @@ if [ "$DO_BUILD" = "1" ]; then
     (
         cd "$REPO_ROOT"
         cargo build --release --locked
+        if [ "$WITH_GPUI" = "1" ]; then
+            # Workspace séparé (gpui impose zbus/async-io et rustc >= 1.92).
+            cargo build --release --locked --manifest-path crates/tcc-gpui/Cargo.toml
+        fi
     )
 else
     tcc_log "réutilisation des binaires existants"
@@ -93,6 +101,9 @@ else
 fi
 if [ "$WITH_ADMIN_HW" = "1" ]; then
     install_args+=(--with-admin-hw)
+fi
+if [ "$WITH_GPUI" = "1" ]; then
+    install_args+=(--with-gpui)
 fi
 TCC_WITH_ADMIN="$WITH_ADMIN" TCC_WITH_ADMIN_HW="$WITH_ADMIN_HW" \
     "$SCRIPT_DIR/install-tree.sh" "${install_args[@]}"

@@ -9,6 +9,7 @@ members = [
     "crates/tcc-admin",
     "crates/tcc-user",
     "crates/tcc-gui",
+    "crates/tcc-launcher",
     "crates/tcc-client",
     "crates/tcc-cli",
 ]

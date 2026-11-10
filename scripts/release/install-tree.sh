@@ -21,6 +21,10 @@
 #                      n'installe pas Admin.Hw. Refusé si le binaire est
 #                      absent. Binaire accepté : `tccd-admin-hw` ou
 #                      `tcc-admin-hw` ; nom installé stable `tccd-admin-hw`.
+#   TCC_WITH_GPUI      1 pour installer l'interface gpui (style Omarchy) en plus
+#                      de Qt 6. Binaire : TCC_GPUI_BIN, sinon
+#                      crates/tcc-gpui/target/release/tcc-gpui (workspace séparé).
+#                      Refusé si le binaire est absent. Défaut : 0.
 #   TCC_NO_MTIME_CLAMP=1 pour ne pas normaliser les mtimes (débogage).
 #
 # Aucun fichier n'est installé dans /opt. Aucun setuid. Aucun runtime
@@ -46,11 +50,13 @@ shift || true
 
 WITH_ADMIN=${TCC_WITH_ADMIN:-1}
 WITH_ADMIN_HW=${TCC_WITH_ADMIN_HW:-0}
+WITH_GPUI=${TCC_WITH_GPUI:-0}
 for arg in "$@"; do
     case "$arg" in
         --with-admin) WITH_ADMIN=1 ;;
         --without-admin) WITH_ADMIN=0 ;;
         --with-admin-hw) WITH_ADMIN_HW=1 ;;
+        --with-gpui) WITH_GPUI=1 ;;
         *) tcc_die "argument inconnu: $arg" ;;
     esac
 done
@@ -64,6 +70,9 @@ BIN_DIR="$TARGET_DIR/release"
 DAEMON_BIN="$BIN_DIR/tcc-daemon"
 USER_BIN="$BIN_DIR/tcc-user"
 GUI_BIN="$BIN_DIR/tcc-gui"
+# Lanceur : choisit l'interface (auto, qt6, gpui) puis exec.
+LAUNCHER_BIN="$BIN_DIR/tuxedo-rust-center"
+GPUI_BIN=${TCC_GPUI_BIN:-"$REPO_ROOT/crates/tcc-gpui/target/release/tcc-gpui"}
 CLI_BIN="$BIN_DIR/tcc-cli"
 # Le crate s'appelle `tcc-admin` ; le binaire peut être nommé `tccd-admin`
 # (recommandé) ou `tcc-admin` (nom par défaut Cargo). Le nom installé est
@@ -72,10 +81,18 @@ ADMIN_BIN=""
 # Phase 2 (AD-12 B2) : binaire distinct, jamais fourni par le crate phase 1.
 ADMIN_HW_BIN=""
 
-for binary in "$DAEMON_BIN" "$USER_BIN" "$GUI_BIN" "$CLI_BIN"; do
+for binary in "$DAEMON_BIN" "$USER_BIN" "$GUI_BIN" "$LAUNCHER_BIN" "$CLI_BIN"; do
     [ -f "$binary" ] || tcc_die "binaire manquant: $binary
 Construire d'abord : cargo build --release --locked (sans dev-overrides)"
 done
+
+if [ "$WITH_GPUI" = "1" ]; then
+    [ -f "$GPUI_BIN" ] || tcc_die "TCC_WITH_GPUI=1 mais binaire gpui absent: $GPUI_BIN
+Construire : cargo build --release --locked --manifest-path crates/tcc-gpui/Cargo.toml"
+    tcc_log "interface gpui installée depuis $GPUI_BIN"
+else
+    tcc_log "interface gpui non installée (TCC_WITH_GPUI=0)"
+fi
 
 if [ "$WITH_ADMIN" = "1" ]; then
     for candidate in tccd-admin tcc-admin; do
@@ -151,7 +168,11 @@ install_file() {
 # ---------------------------------------------------------------------------
 # Binaires
 # ---------------------------------------------------------------------------
-install_file 0755 "$GUI_BIN" usr/bin/tuxedo-rust-center
+install_file 0755 "$LAUNCHER_BIN" usr/bin/tuxedo-rust-center
+install_file 0755 "$GUI_BIN" usr/libexec/tuxedo-rust-center/tcc-gui-qt
+if [ "$WITH_GPUI" = "1" ]; then
+    install_file 0755 "$GPUI_BIN" usr/libexec/tuxedo-rust-center/tcc-gui-gpui
+fi
 install_file 0755 "$CLI_BIN" usr/bin/tcc-cli
 install_file 0755 "$DAEMON_BIN" usr/libexec/tuxedo-rust-center/tccd
 install_file 0755 "$USER_BIN" usr/libexec/tuxedo-rust-center/tccd-user

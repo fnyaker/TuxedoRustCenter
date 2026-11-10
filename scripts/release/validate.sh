@@ -1101,6 +1101,7 @@ if [ "$MODE" = "tree" ]; then
     }
 
     require_path usr/bin/tuxedo-rust-center 755
+    require_path usr/libexec/tuxedo-rust-center/tcc-gui-qt 755
     require_path usr/bin/tcc-cli 755
     require_path usr/libexec/tuxedo-rust-center/tccd 755
     require_path usr/libexec/tuxedo-rust-center/tccd-user 755

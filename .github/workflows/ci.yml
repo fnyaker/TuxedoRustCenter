@@ -24,6 +24,27 @@ jobs:
           components: rustfmt
       - run: cargo fmt --all --check
 
+  gpui:
+    name: Interface gpui
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # gpui exige rustc >= 1.92 : toolchain stable, hors du job MSRV.
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: crates/tcc-gpui
+      - name: Installer les bibliothèques de gpui
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libxcb1-dev libxkbcommon-dev libxkbcommon-x11-dev \
+            libwayland-dev libvulkan-dev libfontconfig-dev
+      - run: cargo fmt --manifest-path crates/tcc-gpui/Cargo.toml --check
+      - run: cargo clippy --manifest-path crates/tcc-gpui/Cargo.toml --all-targets --locked -- -D warnings
+      - run: cargo test --manifest-path crates/tcc-gpui/Cargo.toml --locked
+
   clippy:
     name: Clippy
     runs-on: ubuntu-latest

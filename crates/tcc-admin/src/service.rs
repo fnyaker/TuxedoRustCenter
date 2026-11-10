@@ -532,10 +532,16 @@ impl AdminService {
         // Les profils supprimés deviennent des tombstones permanents. Un
         // identifiant géré par TCC (preset, profil personnalisé par défaut)
         // ne peut pas être supprimé par l'API.
+        // Les presets ne sont jamais persistés par l'API (cf. filtre plus haut) :
+        // un état hérité (migration, ancienne version) peut pourtant en
+        // contenir. Leur absence d'un payload non vide n'est pas une
+        // suppression ; un payload vide reste une demande explicite refusée.
         let deleted: Vec<tcc_core::ProfileId> = previous
-            .ids()
-            .filter(|id| !profiles.contains(id))
-            .cloned()
+            .iter()
+            .filter(|profile| {
+                (parsed.is_empty() || !profile.is_preset()) && !profiles.contains(&profile.id)
+            })
+            .map(|profile| profile.id.clone())
             .collect();
         if deleted.iter().any(tcc_core::ProfileId::is_tcc_managed) {
             return Err(AdminError::Validation("deletedProfileIds".to_owned()));
@@ -1142,6 +1148,38 @@ mod tests {
             .save_profiles_inner(&payload, payload.len())
             .await
             .expect("création autorisée");
+        assert_eq!(saved.tombstones, TombstoneCounts::default());
+    }
+
+    #[tokio::test]
+    async fn legacy_presets_on_disk_do_not_block_a_save() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let store = store(dir.path());
+        let mut legacy: Vec<Profile> = tcc_core::default_profiles()
+            .iter()
+            .filter(|profile| profile.is_preset())
+            .cloned()
+            .collect();
+        legacy.push(Profile::new("custom-live", "Live"));
+        store
+            .save_profiles(&ProfileCollection::new(legacy))
+            .expect("profils");
+
+        let temp = service(
+            store,
+            AdminReloadReport::clean(),
+            std::sync::Arc::new(AllowAll),
+        );
+        let payload = serde_json::to_string(&ProfileCollection::new(vec![
+            Profile::new("custom-live", "Live"),
+            Profile::new("custom-new", "New"),
+        ]))
+        .expect("JSON");
+        let saved = temp
+            .0
+            .save_profiles_inner(&payload, payload.len())
+            .await
+            .expect("sauvegarde autorisée");
         assert_eq!(saved.tombstones, TombstoneCounts::default());
     }
 

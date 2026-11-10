@@ -920,7 +920,7 @@ dependencies = [
 
 [[package]]
 name = "tcc-admin"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -940,7 +940,7 @@ dependencies = [
 
 [[package]]
 name = "tcc-authz"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "async-trait",
  "thiserror 2.0.21",
@@ -950,7 +950,7 @@ dependencies = [
 
 [[package]]
 name = "tcc-cli"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "serde_json",
@@ -962,7 +962,7 @@ dependencies = [
 
 [[package]]
 name = "tcc-core"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "libc",
  "serde",
@@ -974,7 +974,7 @@ dependencies = [
 
 [[package]]
 name = "tcc-daemon"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -995,7 +995,7 @@ dependencies = [
 
 [[package]]
 name = "tcc-gui"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "cxx",
  "cxx-qt",
@@ -1013,7 +1013,7 @@ dependencies = [
 
 [[package]]
 name = "tcc-hw"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "libc",
  "tempfile",
@@ -1023,7 +1023,7 @@ dependencies = [
 
 [[package]]
 name = "tcc-ipc"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "serde",
  "serde_json",
@@ -1033,7 +1033,7 @@ dependencies = [
 
 [[package]]
 name = "tcc-user"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "async-trait",
  "libc",

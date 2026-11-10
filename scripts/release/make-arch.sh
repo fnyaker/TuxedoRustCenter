@@ -41,11 +41,11 @@ cp "$REPO_ROOT/distro/arch/PKGBUILD" "$work/PKGBUILD"
 cp "$REPO_ROOT/distro/arch/tuxedo-rust-center.install" "$work/tuxedo-rust-center.install"
 cp "$tarball" "$work/"
 
-if [ "${TCC_WITH_ADMIN:-0}" = "1" ]; then
-    tcc_log "paquet Arch avec tccd-admin (_with_admin=1)"
-    sed -i 's/^_with_admin=0$/_with_admin=1/' "$work/PKGBUILD"
-    grep -q '^_with_admin=1$' "$work/PKGBUILD" \
-        || tcc_die "impossible d'activer _with_admin dans le PKGBUILD"
+if [ "${TCC_WITH_ADMIN:-1}" = "0" ]; then
+    tcc_log "paquet Arch sans tccd-admin (_with_admin=0)"
+    sed -i 's/^_with_admin=1$/_with_admin=0/' "$work/PKGBUILD"
+    grep -q '^_with_admin=0$' "$work/PKGBUILD" \
+        || tcc_die "impossible de désactiver _with_admin dans le PKGBUILD"
 fi
 # Phase 2 (AD-12 B2) : condition indépendante de _with_admin.
 if [ "${TCC_WITH_ADMIN_HW:-0}" = "1" ]; then

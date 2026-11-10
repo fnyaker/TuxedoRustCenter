@@ -49,9 +49,9 @@ rpmbuild_args=(
     --define "use_source_date_epoch_as_buildtime 1"
     --define "clamp_mtime_to_source_date_epoch 1"
 )
-if [ "${TCC_WITH_ADMIN:-0}" = "1" ]; then
-    tcc_log "RPM avec tccd-admin (--with admin)"
-    rpmbuild_args+=(--with admin)
+if [ "${TCC_WITH_ADMIN:-1}" = "0" ]; then
+    tcc_log "RPM sans tccd-admin (--without admin)"
+    rpmbuild_args+=(--without admin)
 fi
 # Phase 2 (AD-12 B2) : condition RPM indépendante. --with admin seul
 # n'installe pas Admin.Hw.

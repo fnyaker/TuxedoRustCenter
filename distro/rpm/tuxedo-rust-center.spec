@@ -1,9 +1,8 @@
 %global debug_package %{nil}
 
-# tccd-admin : préparé, NON installé par défaut. Activer avec
-#   rpmbuild --with admin ...
-# uniquement quand le binaire tcc-admin/tccd-admin est fonctionnel.
-%bcond_with admin
+# tccd-admin (phase 1) : installé PAR DÉFAUT (activation D-Bus à la demande).
+# Désactiver avec : rpmbuild --without admin ...
+%bcond_without admin
 
 # tccd-admin-hw (phase 2, AD-12 option B2) : TDP/ODM/cTGP. Préparé, NON
 # installé par défaut. Activer avec
@@ -13,7 +12,7 @@
 %bcond_with admin_hw
 
 Name:           tuxedo-rust-center
-Version:        0.1.0
+Version:        0.1.1
 Release:        1%{?dist}
 Summary:        Native Qt 6 TUXEDO Control Center rewrite
 
@@ -87,6 +86,8 @@ cargo build --release --locked
 rm -rf %{buildroot}
 %if %{with admin}
 export TCC_WITH_ADMIN=1
+%else
+export TCC_WITH_ADMIN=0
 %endif
 %if %{with admin_hw}
 export TCC_WITH_ADMIN_HW=1
@@ -179,6 +180,9 @@ fi
 %systemd_postun_with_restart tccd.service
 
 %changelog
+* Tue Nov 10 2026 TuxedoRustCenter contributors <maintainers@tuxedorustcenter.invalid> - 0.1.1-1
+- tccd-admin (phase 1) installé par défaut ; --without admin pour l'exclure.
+
 * Fri Nov 06 2026 TuxedoRustCenter contributors <maintainers@tuxedorustcenter.invalid> - 0.1.0-1
 - Premier paquet installable (jalon 1/2) : tccd, tccd-user, GUI Qt 6 et CLI.
 - Units systemd système et utilisateur, politique D-Bus, polkit, udev sans

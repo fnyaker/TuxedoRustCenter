@@ -119,8 +119,10 @@ jobs:
           set -e
           hw_bin=target/release/tccd-admin-hw
           test -x "$hw_bin"
-          # Paquet par défaut : aucun fichier admin, ni phase 1 ni phase 2.
-          test ! -e build/pkgroot/usr/libexec/tuxedo-rust-center/tccd-admin
+          # Paquet par défaut : phase 1 installée, phase 2 absente.
+          test -x build/pkgroot/usr/libexec/tuxedo-rust-center/tccd-admin
+          test -e build/pkgroot/usr/lib/systemd/system/tccd-admin.service
+          test -e build/pkgroot/usr/share/dbus-1/system-services/com.tuxedocomputers.tccd.Admin.service
           test ! -e build/pkgroot/usr/libexec/tuxedo-rust-center/tccd-admin-hw
           test ! -e build/pkgroot/usr/lib/systemd/system/tccd-admin-hw.service
           test ! -e build/pkgroot/usr/share/dbus-1/system-services/com.tuxedocomputers.tccd.Admin.Hw.service
@@ -163,8 +165,10 @@ jobs:
           dpkg-deb --contents "$deb" > /tmp/contents.txt
           ! grep -qE '(^| )\./opt/' /tmp/contents.txt
           ! grep -qE '^-rws|^-r-xr-s' /tmp/contents.txt
-          # tccd-admin et tccd-sleep ne doivent pas être livrés
-          ! grep -q 'tccd-admin' /tmp/contents.txt
+          # tccd-admin livré par défaut ; admin-hw et tccd-sleep non
+          grep -q './usr/libexec/tuxedo-rust-center/tccd-admin$' /tmp/contents.txt
+          grep -q './usr/lib/systemd/system/tccd-admin.service' /tmp/contents.txt
+          ! grep -q 'tccd-admin-hw' /tmp/contents.txt
           ! grep -q 'tccd-sleep' /tmp/contents.txt
           grep -q './usr/libexec/tuxedo-rust-center/tccd' /tmp/contents.txt
           grep -q './usr/libexec/tuxedo-rust-center/tccd-user' /tmp/contents.txt
@@ -237,9 +241,9 @@ jobs:
           test -x /usr/bin/tcc-cli
           test -x /usr/libexec/tuxedo-rust-center/tccd
           test -x /usr/libexec/tuxedo-rust-center/tccd-user
-          test ! -e /usr/libexec/tuxedo-rust-center/tccd-admin
-          test ! -e /usr/lib/systemd/system/tccd-admin.service
-          test ! -e /usr/share/dbus-1/system-services/com.tuxedocomputers.tccd.Admin.service
+          test -x /usr/libexec/tuxedo-rust-center/tccd-admin
+          test -e /usr/lib/systemd/system/tccd-admin.service
+          test -e /usr/share/dbus-1/system-services/com.tuxedocomputers.tccd.Admin.service
           test ! -e /usr/libexec/tuxedo-rust-center/tccd-admin-hw
           test ! -e /usr/lib/systemd/system/tccd-admin-hw.service
           test ! -e /usr/share/dbus-1/system-services/com.tuxedocomputers.tccd.Admin.Hw.service
@@ -365,14 +369,14 @@ jobs:
         run: |
           set -e
           rpmspec -P distro/rpm/tuxedo-rust-center.spec >/dev/null
-          rpmspec -P --with admin distro/rpm/tuxedo-rust-center.spec >/dev/null
+          rpmspec -P --without admin distro/rpm/tuxedo-rust-center.spec >/dev/null
           rpmspec -P --with admin_hw distro/rpm/tuxedo-rust-center.spec >/dev/null
-          rpmspec -P --with admin --with admin_hw distro/rpm/tuxedo-rust-center.spec >/dev/null
+          rpmspec -P --with admin_hw distro/rpm/tuxedo-rust-center.spec >/dev/null
           # Indépendance : --with admin seul n'installe pas Admin.Hw, et
           # --with admin_hw seul n'installe pas la phase 1.
-          ! rpmspec -P --with admin distro/rpm/tuxedo-rust-center.spec \
+          ! rpmspec -P distro/rpm/tuxedo-rust-center.spec \
             | grep -q '/usr/libexec/tuxedo-rust-center/tccd-admin-hw'
-          ! rpmspec -P --with admin_hw distro/rpm/tuxedo-rust-center.spec \
+          ! rpmspec -P --without admin --with admin_hw distro/rpm/tuxedo-rust-center.spec \
             | grep -q '/usr/libexec/tuxedo-rust-center/tccd-admin$'
           rpmspec -P --with admin_hw distro/rpm/tuxedo-rust-center.spec \
             | grep -q '/usr/lib/systemd/system/tccd-admin-hw.service'
@@ -394,7 +398,8 @@ jobs:
           rpm -qip "$rpm"
           rpm -qlp "$rpm" > /tmp/files.txt
           ! grep -qE '^/opt/' /tmp/files.txt
-          ! grep -q 'tccd-admin' /tmp/files.txt
+          grep -qE '(^|/)usr/libexec/tuxedo-rust-center/tccd-admin$' /tmp/files.txt
+          ! grep -q 'tccd-admin-hw' /tmp/files.txt
           ! grep -q 'tccd-sleep' /tmp/files.txt
           grep -qx '/usr/libexec/tuxedo-rust-center/tccd' /tmp/files.txt
           grep -qx '/usr/libexec/tuxedo-rust-center/tccd-user' /tmp/files.txt
@@ -407,7 +412,7 @@ jobs:
           test -x /usr/bin/tuxedo-rust-center
           test -x /usr/libexec/tuxedo-rust-center/tccd
           test -x /usr/libexec/tuxedo-rust-center/tccd-user
-          test ! -e /usr/libexec/tuxedo-rust-center/tccd-admin
+          test -x /usr/libexec/tuxedo-rust-center/tccd-admin
           test ! -e /usr/libexec/tuxedo-rust-center/tccd-admin-hw
           test ! -e /usr/lib/systemd/system/tccd-admin-hw.service
           test ! -e /usr/share/dbus-1/system-services/com.tuxedocomputers.tccd.Admin.Hw.service
@@ -513,7 +518,8 @@ jobs:
           pkg=$(ls build/packages/*.pkg.tar.zst)
           bsdtar -tf "$pkg" > /tmp/files.txt
           ! grep -qE '^opt/' /tmp/files.txt
-          ! grep -q 'tccd-admin' /tmp/files.txt
+          grep -qE '(^|/)usr/libexec/tuxedo-rust-center/tccd-admin$' /tmp/files.txt
+          ! grep -q 'tccd-admin-hw' /tmp/files.txt
           ! grep -q 'tccd-sleep' /tmp/files.txt
           grep -qx 'usr/libexec/tuxedo-rust-center/tccd' /tmp/files.txt
           grep -qx 'usr/libexec/tuxedo-rust-center/tccd-user' /tmp/files.txt
@@ -525,7 +531,7 @@ jobs:
           pacman -U --noconfirm "$pkg"
           test -x /usr/bin/tuxedo-rust-center
           test -x /usr/libexec/tuxedo-rust-center/tccd
-          test ! -e /usr/libexec/tuxedo-rust-center/tccd-admin
+          test -x /usr/libexec/tuxedo-rust-center/tccd-admin
           test ! -e /usr/libexec/tuxedo-rust-center/tccd-admin-hw
           test ! -e /usr/lib/systemd/system/tccd-admin-hw.service
           test ! -e /usr/share/dbus-1/system-services/com.tuxedocomputers.tccd.Admin.Hw.service

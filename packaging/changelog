@@ -1,3 +1,10 @@
+tuxedo-rust-center (0.1.1-1) noble; urgency=medium
+
+  * tccd-admin (phase 1) installé par défaut dans les paquets deb, rpm et
+    Arch (TCC_WITH_ADMIN=0 pour l'exclure).
+
+ -- TuxedoRustCenter contributors <maintainers@tuxedorustcenter.invalid>  Tue, 10 Nov 2026 12:00:00 +0000
+
 tuxedo-rust-center (0.1.0-1) noble; urgency=medium
 
   * Premier paquet installable (jalon 1/2) : binaires tccd, tccd-user,

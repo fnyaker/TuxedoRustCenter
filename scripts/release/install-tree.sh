@@ -44,11 +44,12 @@ if [ -z "$DESTDIR" ] || [ "$DESTDIR" = "-h" ] || [ "$DESTDIR" = "--help" ]; then
 fi
 shift || true
 
-WITH_ADMIN=${TCC_WITH_ADMIN:-0}
+WITH_ADMIN=${TCC_WITH_ADMIN:-1}
 WITH_ADMIN_HW=${TCC_WITH_ADMIN_HW:-0}
 for arg in "$@"; do
     case "$arg" in
         --with-admin) WITH_ADMIN=1 ;;
+        --without-admin) WITH_ADMIN=0 ;;
         --with-admin-hw) WITH_ADMIN_HW=1 ;;
         *) tcc_die "argument inconnu: $arg" ;;
     esac
@@ -86,10 +87,10 @@ if [ "$WITH_ADMIN" = "1" ]; then
     [ -n "$ADMIN_BIN" ] || tcc_die "TCC_WITH_ADMIN=1 mais aucun binaire admin
 n'a été trouvé dans $BIN_DIR (attendu: tccd-admin ou tcc-admin).
 Le paquet ne doit pas dépendre d'un exécutable inexistant : construire le
-crate tcc-admin ou laisser TCC_WITH_ADMIN=0."
+crate tcc-admin ou passer TCC_WITH_ADMIN=0 (--without-admin)."
     tcc_log "tccd-admin installé depuis $(basename -- "$ADMIN_BIN") (phase 1, activation D-Bus)"
 else
-    tcc_log "tccd-admin non installé (TCC_WITH_ADMIN=0)"
+    tcc_log "tccd-admin non installé (TCC_WITH_ADMIN=0, --without-admin)"
 fi
 
 if [ "$WITH_ADMIN_HW" = "1" ]; then

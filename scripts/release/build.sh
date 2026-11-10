@@ -30,7 +30,7 @@ SCRIPT_DIR=$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd -P)
 # shellcheck source=lib.sh
 . "$SCRIPT_DIR/lib.sh"
 
-WITH_ADMIN=0
+WITH_ADMIN=1
 WITH_ADMIN_HW=0
 DO_DEB=1
 DO_RPM=0
@@ -42,6 +42,7 @@ DO_VALIDATE=1
 while [ $# -gt 0 ]; do
     case "$1" in
         --with-admin) WITH_ADMIN=1 ;;
+        --without-admin) WITH_ADMIN=0 ;;
         --with-admin-hw) WITH_ADMIN_HW=1 ;;
         --deb) DO_DEB=1 ;;
         --no-deb) DO_DEB=0 ;;
@@ -87,6 +88,8 @@ rm -rf "$PKGROOT"
 install_args=("$PKGROOT")
 if [ "$WITH_ADMIN" = "1" ]; then
     install_args+=(--with-admin)
+else
+    install_args+=(--without-admin)
 fi
 if [ "$WITH_ADMIN_HW" = "1" ]; then
     install_args+=(--with-admin-hw)

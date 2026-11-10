@@ -15,7 +15,7 @@ La source de vérité des chemins installés est
 |---|---|---|
 | `packaging/systemd/tccd.service` | `/usr/lib/systemd/system/tccd.service` | **installé** |
 | `packaging/systemd/tccd-user.service` | `/usr/lib/systemd/user/tccd-user.service` + `graphical-session.target.wants/` | **installé** |
-| `packaging/systemd/tccd-admin.service` | `/usr/lib/systemd/system/tccd-admin.service` | **non installé par défaut** (phase 1 implémentée, `TCC_WITH_ADMIN=1`) |
+| `packaging/systemd/tccd-admin.service` | `/usr/lib/systemd/system/tccd-admin.service` | **installé par défaut** (phase 1, activation D-Bus ; `TCC_WITH_ADMIN=0` pour l'exclure) |
 | `packaging/systemd/tccd-admin-hw.service` | `/usr/lib/systemd/system/tccd-admin-hw.service` | **non installé** (phase 2 préparée, service non validé) |
 | `packaging/systemd/tccd-sleep.service.example` | — | **référence seule** (R-06) |
 | `packaging/dbus/com.tuxedocomputers.tccd.conf` | `/usr/share/dbus-1/system.d/com.tuxedocomputers.tccd.conf` | **installé** |
@@ -117,7 +117,7 @@ sont réappliquées au prochain changement d'état ou `SIGHUP`).
 
 `tccd-admin.service` n'a **pas** de `[Install]` et **n'est pas installé par
 défaut** ; le binaire `tccd-admin` existe et le service est activé uniquement
-avec `TCC_WITH_ADMIN=1`. Voir §tccd-admin.
+par défaut (`TCC_WITH_ADMIN=0` pour l'exclure). Voir §tccd-admin.
 
 ## tccd-admin (D1) — préparé, NON installé par défaut
 

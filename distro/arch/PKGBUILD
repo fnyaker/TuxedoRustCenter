@@ -10,11 +10,11 @@
 # Aucun fichier dans /opt. Aucun runtime Node/Python. Aucun setuid.
 
 pkgname=tuxedo-rust-center
-pkgver=0.1.0
+pkgver=0.1.1
 pkgrel=1
-# tccd-admin : préparé, NON installé par défaut. Passer à 1 uniquement quand
-# le binaire tcc-admin/tccd-admin est fonctionnel (phase 1).
-_with_admin=0
+# tccd-admin (phase 1) : installé PAR DÉFAUT (activation D-Bus à la demande).
+# Passer à 0 pour un paquet sans service admin.
+_with_admin=1
 # tccd-admin-hw (phase 2, AD-12 B2 : TDP/ODM/cTGP) : préparé, NON installé
 # par défaut. Passer à 1 uniquement quand tccd-admin-hw existe et est validé.
 # Indépendant de _with_admin : _with_admin=1 ne l'installe PAS.

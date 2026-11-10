@@ -147,6 +147,9 @@ mod tests {
     fn no_battery_is_not_an_error() {
         let root = tempfile::tempdir().unwrap();
         assert_eq!(battery(root.path()), json!({"present": false}));
-        assert_eq!(battery(Path::new("/nonexistent")), json!({"present": false}));
+        assert_eq!(
+            battery(Path::new("/nonexistent")),
+            json!({"present": false})
+        );
     }
 }

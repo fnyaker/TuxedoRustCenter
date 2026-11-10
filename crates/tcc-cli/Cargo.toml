@@ -13,6 +13,7 @@ clap.workspace = true
 clap_complete.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+tcc-client = { path = "../tcc-client" }
 tcc-core = { path = "../tcc-core" }
 tcc-ipc = { path = "../tcc-ipc" }
 tokio.workspace = true

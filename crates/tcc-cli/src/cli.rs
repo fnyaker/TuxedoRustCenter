@@ -341,17 +341,34 @@ mod tests {
 
     #[test]
     fn legacy_commands_still_parse() {
-        assert!(matches!(parse(&["set-temp", "x"]).command, Some(Cmd::SetTemp { .. })));
-        assert!(matches!(parse(&["clear-temp"]).command, Some(Cmd::ClearTemp)));
+        assert!(matches!(
+            parse(&["set-temp", "x"]).command,
+            Some(Cmd::SetTemp { .. })
+        ));
+        assert!(matches!(
+            parse(&["clear-temp"]).command,
+            Some(Cmd::ClearTemp)
+        ));
         assert!(matches!(parse(&["fan"]).command, Some(Cmd::Fans)));
         assert!(matches!(parse(&["hw"]).command, Some(Cmd::Hardware)));
-        assert!(matches!(parse(&["sensors", "on"]).command, Some(Cmd::Sensors { action: Some(Toggle::On) })));
+        assert!(matches!(
+            parse(&["sensors", "on"]).command,
+            Some(Cmd::Sensors {
+                action: Some(Toggle::On)
+            })
+        ));
     }
 
     #[test]
     fn profile_use_aliases() {
-        assert!(matches!(parse(&["profile", "use", "x"]).command, Some(Cmd::Profile(ProfileCmd::Use { .. }))));
-        assert!(matches!(parse(&["profile", "set-temp", "x"]).command, Some(Cmd::Profile(ProfileCmd::Use { .. }))));
+        assert!(matches!(
+            parse(&["profile", "use", "x"]).command,
+            Some(Cmd::Profile(ProfileCmd::Use { .. }))
+        ));
+        assert!(matches!(
+            parse(&["profile", "set-temp", "x"]).command,
+            Some(Cmd::Profile(ProfileCmd::Use { .. }))
+        ));
     }
 
     #[test]
@@ -365,6 +382,16 @@ mod tests {
     #[test]
     fn negative_values_are_accepted() {
         assert!(Cli::try_parse_from(["tcc-cli", "ctgp", "-5"]).is_ok());
-        assert!(Cli::try_parse_from(["tcc-cli", "profile", "set", "a", "display.refreshRate", "-1"]).is_ok());
+        assert!(
+            Cli::try_parse_from([
+                "tcc-cli",
+                "profile",
+                "set",
+                "a",
+                "display.refreshRate",
+                "-1"
+            ])
+            .is_ok()
+        );
     }
 }

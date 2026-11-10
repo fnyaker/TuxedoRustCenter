@@ -39,7 +39,9 @@ pub fn get_path<'a>(root: &'a Value, path: &str) -> Option<&'a Value> {
 /// un index de tableau doit exister.
 pub fn set_path(root: &mut Value, path: &str, value: Value) -> Result<()> {
     let parts = segments(path)?;
-    let (last, parents) = parts.split_last().map_or((None, &[][..]), |(l, p)| (Some(*l), p));
+    let (last, parents) = parts
+        .split_last()
+        .map_or((None, &[][..]), |(l, p)| (Some(*l), p));
     let Some(last) = last else {
         bail!("chemin vide");
     };

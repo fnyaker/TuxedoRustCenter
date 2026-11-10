@@ -118,7 +118,10 @@ fn stats_degrades_gracefully_without_daemon() {
     let output = run(&["stats", "--json"]);
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("\"daemon\":false"), "stdout inattendu: {stdout}");
+    assert!(
+        stdout.contains("\"daemon\":false"),
+        "stdout inattendu: {stdout}"
+    );
 }
 
 #[test]

@@ -12,26 +12,28 @@
 #![forbid(unsafe_code)]
 #![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used))]
 
-mod bus;
 mod cli;
-mod jsonpath;
-mod stats;
 
 use anyhow::{Context, Result, bail};
 use clap::{CommandFactory, Parser};
 use serde_json::{Value, json};
 use tcc_core::{Profile, ProfileCollection, ProfileId, Settings};
 
-use bus::{Bus, Target};
-use cli::{
-    ChargingCmd, Cli, Cmd, LightbarArg, ProfileCmd, SettingsCmd, TdpCmd, Toggle,
-};
+use cli::{ChargingCmd, Cli, Cmd, LightbarArg, ProfileCmd, SettingsCmd, TdpCmd, Toggle};
+use tcc_client::bus::{Bus, Target};
+use tcc_client::ops::{apply_path, editable, resolve_profile};
+use tcc_client::{jsonpath, stats};
 
 fn main() -> Result<()> {
     let cli = Cli::parse();
     let command = cli.command.unwrap_or(Cmd::Status);
     if let Cmd::Completions { shell } = command {
-        clap_complete::generate(shell, &mut Cli::command(), "tcc-cli", &mut std::io::stdout());
+        clap_complete::generate(
+            shell,
+            &mut Cli::command(),
+            "tcc-cli",
+            &mut std::io::stdout(),
+        );
         return Ok(());
     }
     let runtime = tokio::runtime::Builder::new_current_thread()
@@ -95,7 +97,9 @@ impl Ctx {
     }
 
     async fn save_profiles(&mut self, collection: &ProfileCollection) -> Result<()> {
-        collection.validate().context("collection de profils invalide")?;
+        collection
+            .validate()
+            .context("collection de profils invalide")?;
         let payload = serde_json::to_string(collection)?;
         let ok: bool = self
             .bus
@@ -120,35 +124,13 @@ impl Ctx {
         Ok(())
     }
 
-    async fn manager_bool(&mut self, method: &str, body: &(impl serde::Serialize + zbus::zvariant::DynamicType)) -> Result<bool> {
+    async fn manager_bool(
+        &mut self,
+        method: &str,
+        body: &(impl serde::Serialize + zbus::zvariant::DynamicType),
+    ) -> Result<bool> {
         self.bus.call(Target::Manager, method, body).await
     }
-}
-
-/// Identifiant ou nom (unique, insensible à la casse) → identifiant.
-fn resolve_profile<'a>(collection: &'a ProfileCollection, query: &str) -> Result<&'a Profile> {
-    if let Some(profile) = collection.get_by_id(query) {
-        return Ok(profile);
-    }
-    let wanted = query.to_lowercase();
-    let mut matches = collection
-        .iter()
-        .filter(|profile| profile.name.to_lowercase() == wanted);
-    match (matches.next(), matches.next()) {
-        (Some(profile), None) => Ok(profile),
-        (Some(_), Some(_)) => bail!("« {query} » correspond à plusieurs profils : utilisez l'id"),
-        _ => bail!("profil introuvable : {query}"),
-    }
-}
-
-fn editable<'a>(collection: &'a mut ProfileCollection, query: &str) -> Result<&'a mut Profile> {
-    let id = resolve_profile(collection, query)?.id.clone();
-    if id.is_builtin_preset() || collection.get(&id).is_some_and(Profile::is_preset) {
-        bail!("« {query} » est un preset : copiez-le d'abord (profile copy)");
-    }
-    collection
-        .get_mut(&id)
-        .ok_or_else(|| anyhow::anyhow!("profil introuvable : {query}"))
 }
 
 /// Contenu d'un argument : littéral, `@fichier` ou `-` (stdin).
@@ -156,35 +138,15 @@ fn read_arg(arg: &str) -> Result<String> {
     use std::io::Read;
     if arg == "-" {
         let mut buffer = String::new();
-        std::io::stdin().read_to_string(&mut buffer).context("lecture stdin")?;
+        std::io::stdin()
+            .read_to_string(&mut buffer)
+            .context("lecture stdin")?;
         Ok(buffer)
     } else if let Some(path) = arg.strip_prefix('@') {
         std::fs::read_to_string(path).with_context(|| format!("lecture de {path}"))
     } else {
         Ok(arg.to_owned())
     }
-}
-
-/// Modifie `value[path]` puis relit le résultat via `parse` : une clé inconnue
-/// (ignorée par serde) ou une valeur rejetée est une erreur, pas un no-op.
-fn apply_path<T>(
-    current: &T,
-    path: &str,
-    raw: &str,
-    parse: impl Fn(Value) -> Result<T>,
-) -> Result<T>
-where
-    T: serde::Serialize,
-{
-    let mut document = serde_json::to_value(current)?;
-    let value = jsonpath::parse_value(raw);
-    jsonpath::set_path(&mut document, path, value.clone())?;
-    let updated = parse(document)?;
-    let reread = serde_json::to_value(&updated)?;
-    if jsonpath::get_path(&reread, path).is_none() {
-        bail!("clé inconnue ou valeur rejetée : {path}");
-    }
-    Ok(updated)
 }
 
 async fn run(ctx: &mut Ctx, command: Cmd) -> Result<()> {
@@ -195,7 +157,10 @@ async fn run(ctx: &mut Ctx, command: Cmd) -> Result<()> {
         }
         Cmd::Ping => {
             let ok: bool = ctx.bus.call(Target::Daemon, "Ping", &()).await?;
-            ctx.done(ok, &format!("tccd: {}", if ok { "vivant" } else { "injoignable" }))
+            ctx.done(
+                ok,
+                &format!("tccd: {}", if ok { "vivant" } else { "injoignable" }),
+            )
         }
         Cmd::DaemonVersion => {
             let version: String = ctx.bus.call(Target::Daemon, "GetVersion", &()).await?;
@@ -212,11 +177,15 @@ async fn run(ctx: &mut Ctx, command: Cmd) -> Result<()> {
             ctx.emit_raw(&raw)
         }
         Cmd::Hardware => {
-            let raw = ctx.daemon_json(Target::Manager, "GetHardwareSnapshotJSON").await?;
+            let raw = ctx
+                .daemon_json(Target::Manager, "GetHardwareSnapshotJSON")
+                .await?;
             ctx.emit_raw(&raw)
         }
         Cmd::Timer => {
-            let raw = ctx.daemon_json(Target::Manager, "GetShutdownTimerJSON").await?;
+            let raw = ctx
+                .daemon_json(Target::Manager, "GetShutdownTimerJSON")
+                .await?;
             ctx.emit_raw(&raw)
         }
         Cmd::Sensors { action } => sensors_cmd(ctx, action).await,
@@ -225,7 +194,9 @@ async fn run(ctx: &mut Ctx, command: Cmd) -> Result<()> {
         Cmd::Keyboard { states } => {
             let payload = read_arg(&states)?;
             serde_json::from_str::<Value>(&payload).context("JSON des zones clavier invalide")?;
-            let ok = ctx.manager_bool("SetKeyboardStatesJSON", &payload.as_str()).await?;
+            let ok = ctx
+                .manager_bool("SetKeyboardStatesJSON", &payload.as_str())
+                .await?;
             ctx.done(ok, &format!("éclairage clavier appliqué: {ok}"))
         }
         Cmd::Lightbar { state } => {
@@ -237,39 +208,74 @@ async fn run(ctx: &mut Ctx, command: Cmd) -> Result<()> {
                     payload
                 }
             };
-            let ok = ctx.manager_bool("SetLightbarStatesJSON", &payload.as_str()).await?;
+            let ok = ctx
+                .manager_bool("SetLightbarStatesJSON", &payload.as_str())
+                .await?;
             ctx.done(ok, &format!("lightbar appliquée: {ok}"))
         }
         Cmd::FnLock { state } => {
             let enabled = state == Toggle::On;
             let ok = ctx.manager_bool("SetFnLockStatus", &enabled).await?;
-            ctx.done(ok, &format!("Fn Lock {}: {ok}", if enabled { "on" } else { "off" }))
+            ctx.done(
+                ok,
+                &format!("Fn Lock {}: {ok}", if enabled { "on" } else { "off" }),
+            )
         }
         Cmd::Tdp(sub) => tdp_cmd(ctx, sub).await,
         Cmd::Odm { name, r#override } => {
-            let method = if r#override { "SetOdmProfileOverride" } else { "SetOdmProfile" };
-            let ok: bool = ctx.bus.call(Target::AdminHw, method, &name.as_str()).await?;
+            let method = if r#override {
+                "SetOdmProfileOverride"
+            } else {
+                "SetOdmProfile"
+            };
+            let ok: bool = ctx
+                .bus
+                .call(Target::AdminHw, method, &name.as_str())
+                .await?;
             ctx.done(ok, &format!("profil ODM '{name}': {ok}"))
         }
         Cmd::Ctgp { offset } => {
-            let ok: bool = ctx.bus.call(Target::AdminHw, "SetNvidiaCtgpOffset", &offset).await?;
+            let ok: bool = ctx
+                .bus
+                .call(Target::AdminHw, "SetNvidiaCtgpOffset", &offset)
+                .await?;
             ctx.done(ok, &format!("offset cTGP {offset} W: {ok}"))
         }
         Cmd::Display => {
-            let raw: String = ctx.bus.call(Target::Session, "GetDisplayInfoJSON", &()).await?;
+            let raw: String = ctx
+                .bus
+                .call(Target::Session, "GetDisplayInfoJSON", &())
+                .await?;
             ctx.emit_raw(&raw)
         }
         Cmd::Uvc { device, key, value } => {
             let ok: bool = ctx
                 .bus
-                .call(Target::Session, "SetUvcControl", &(device.as_str(), key.as_str(), value))
+                .call(
+                    Target::Session,
+                    "SetUvcControl",
+                    &(device.as_str(), key.as_str(), value),
+                )
                 .await?;
-            ctx.done(ok, &format!("contrôle UVC '{key}'={value}: {}", if ok { "écrit" } else { "déjà à cette valeur" }))
+            ctx.done(
+                ok,
+                &format!(
+                    "contrôle UVC '{key}'={value}: {}",
+                    if ok {
+                        "écrit"
+                    } else {
+                        "déjà à cette valeur"
+                    }
+                ),
+            )
         }
         Cmd::Admin => {
             let ping: bool = ctx.bus.call(Target::Admin, "Ping", &()).await?;
             let version: String = ctx.bus.call(Target::Admin, "GetVersion", &()).await?;
-            let contract: u32 = ctx.bus.call(Target::Admin, "GetContractVersion", &()).await?;
+            let contract: u32 = ctx
+                .bus
+                .call(Target::Admin, "GetContractVersion", &())
+                .await?;
             if ctx.compact {
                 ctx.emit(&json!({"ping": ping, "version": version, "contract": contract}))
             } else {
@@ -296,7 +302,10 @@ async fn profile_cmd(ctx: &mut Ctx, sub: ProfileCmd) -> Result<()> {
             let state: Value =
                 serde_json::from_str(&ctx.daemon_json(Target::Daemon, "GetStateJSON").await?)
                     .unwrap_or(Value::Null);
-            let active = state["activeProfile"]["id"].as_str().unwrap_or_default().to_owned();
+            let active = state["activeProfile"]["id"]
+                .as_str()
+                .unwrap_or_default()
+                .to_owned();
             if ctx.compact {
                 let list: Vec<Value> = collection
                     .iter()
@@ -324,17 +333,28 @@ async fn profile_cmd(ctx: &mut Ctx, sub: ProfileCmd) -> Result<()> {
             ctx.emit(&serde_json::to_value(found)?)
         }
         ProfileCmd::Active => {
-            let raw = ctx.daemon_json(Target::Daemon, "GetActiveProfileJSON").await?;
+            let raw = ctx
+                .daemon_json(Target::Daemon, "GetActiveProfileJSON")
+                .await?;
             ctx.emit_raw(&raw)
         }
         ProfileCmd::Use { profile } => {
             let collection = ctx.load_profiles().await?;
-            let id = resolve_profile(&collection, &profile)?.id.as_str().to_owned();
-            let ok: bool = ctx.bus.call(Target::Daemon, "SetTempProfile", &id.as_str()).await?;
+            let id = resolve_profile(&collection, &profile)?
+                .id
+                .as_str()
+                .to_owned();
+            let ok: bool = ctx
+                .bus
+                .call(Target::Daemon, "SetTempProfile", &id.as_str())
+                .await?;
             ctx.done(ok, &format!("profil temporaire '{id}': {ok}"))
         }
         ProfileCmd::Clear => {
-            let ok: bool = ctx.bus.call(Target::Daemon, "ClearTempProfile", &()).await?;
+            let ok: bool = ctx
+                .bus
+                .call(Target::Daemon, "ClearTempProfile", &())
+                .await?;
             ctx.done(ok, &format!("override temporaire supprimé: {ok}"))
         }
         ProfileCmd::Create { name } => {
@@ -368,7 +388,11 @@ async fn profile_cmd(ctx: &mut Ctx, sub: ProfileCmd) -> Result<()> {
             ctx.save_profiles(&collection).await?;
             ctx.done(true, "profil renommé")
         }
-        ProfileCmd::Set { profile, key, value } => {
+        ProfileCmd::Set {
+            profile,
+            key,
+            value,
+        } => {
             if key == "id" || key.starts_with("id.") {
                 bail!("l'identifiant d'un profil est immuable");
             }
@@ -408,7 +432,11 @@ async fn profile_cmd(ctx: &mut Ctx, sub: ProfileCmd) -> Result<()> {
             }
         }
         ProfileCmd::Import { file } => {
-            let text = read_arg(&if file == "-" { file } else { format!("@{file}") })?;
+            let text = read_arg(&if file == "-" {
+                file
+            } else {
+                format!("@{file}")
+            })?;
             let mut profile: Profile =
                 serde_json::from_str(&text).context("profil importé invalide")?;
             // Toujours un nouvel identifiant : pas de collision ni de tombstone.
@@ -460,16 +488,27 @@ async fn sensors_cmd(ctx: &mut Ctx, action: Option<Toggle>) -> Result<()> {
                 .bus
                 .call(Target::Manager, "GetSensorDataCollectionStatus", &())
                 .await?;
-            ctx.done(on, &format!("collecte capteurs: {}", if on { "active" } else { "inactive" }))
+            ctx.done(
+                on,
+                &format!(
+                    "collecte capteurs: {}",
+                    if on { "active" } else { "inactive" }
+                ),
+            )
         }
         Some(toggle) => {
             let enabled = toggle == Toggle::On;
-            ctx.manager_bool("SetSensorDataCollectionStatus", &enabled).await?;
+            ctx.manager_bool("SetSensorDataCollectionStatus", &enabled)
+                .await?;
             ctx.done(
                 true,
                 &format!(
                     "collecte capteurs: {}",
-                    if enabled { "activée (bail 10 s)" } else { "désactivée" }
+                    if enabled {
+                        "activée (bail 10 s)"
+                    } else {
+                        "désactivée"
+                    }
                 ),
             )
         }
@@ -480,10 +519,11 @@ async fn stats_cmd(ctx: &mut Ctx, no_sensors: bool) -> Result<()> {
     let root = std::env::var("TCC_POWER_SUPPLY_ROOT")
         .unwrap_or_else(|_| "/sys/class/power_supply".to_owned());
     // La mesure CPU bloque ~200 ms : hors du runtime async.
-    let usage = tokio::task::spawn_blocking(|| stats::cpu_usage(std::time::Duration::from_millis(200)))
-        .await
-        .ok()
-        .flatten();
+    let usage =
+        tokio::task::spawn_blocking(|| stats::cpu_usage(std::time::Duration::from_millis(200)))
+            .await
+            .ok()
+            .flatten();
     let battery = stats::battery(std::path::Path::new(&root));
 
     let mut daemon_error: Option<String> = None;
@@ -498,7 +538,10 @@ async fn stats_cmd(ctx: &mut Ctx, no_sensors: bool) -> Result<()> {
     let mut cpu_power: Option<f64> = None;
     let mut cpu_temp: Option<f64> = None;
     if state.is_some() && !no_sensors {
-        if let Ok(raw) = ctx.daemon_json(Target::Manager, "GetHardwareSnapshotJSON").await {
+        if let Ok(raw) = ctx
+            .daemon_json(Target::Manager, "GetHardwareSnapshotJSON")
+            .await
+        {
             let snapshot: Value = serde_json::from_str(&raw).unwrap_or(Value::Null);
             let sensors = &snapshot["sensors"];
             if sensors["enabled"].as_bool() == Some(true) {
@@ -507,7 +550,9 @@ async fn stats_cmd(ctx: &mut Ctx, no_sensors: bool) -> Result<()> {
             } else {
                 // Bail de 10 s : renouvelé par les lectures suivantes ; la
                 // première mesure de puissance arrive donc au 2ᵉ appel.
-                let _ = ctx.manager_bool("SetSensorDataCollectionStatus", &true).await;
+                let _ = ctx
+                    .manager_bool("SetSensorDataCollectionStatus", &true)
+                    .await;
             }
         }
     }
@@ -526,7 +571,9 @@ async fn stats_cmd(ctx: &mut Ctx, no_sensors: bool) -> Result<()> {
     if ctx.compact {
         return ctx.emit(&report);
     }
-    let fmt = |value: Option<f64>, unit: &str| value.map_or_else(|| "—".to_owned(), |v| format!("{v:.1} {unit}"));
+    let fmt = |value: Option<f64>, unit: &str| {
+        value.map_or_else(|| "—".to_owned(), |v| format!("{v:.1} {unit}"))
+    };
     match &state {
         Some(_) => println!(
             "profil   : {} ({})",
@@ -562,15 +609,36 @@ async fn stats_cmd(ctx: &mut Ctx, no_sensors: bool) -> Result<()> {
 async fn charging_cmd(ctx: &mut Ctx, sub: ChargingCmd) -> Result<()> {
     let (method, ok) = match sub {
         ChargingCmd::Show => {
-            let raw = ctx.daemon_json(Target::Manager, "GetHardwareSnapshotJSON").await?;
+            let raw = ctx
+                .daemon_json(Target::Manager, "GetHardwareSnapshotJSON")
+                .await?;
             let snapshot: Value = serde_json::from_str(&raw).context("snapshot invalide")?;
             return ctx.emit(&snapshot["charging"]);
         }
-        ChargingCmd::Profile { name } => ("SetChargingProfile", ctx.manager_bool("SetChargingProfile", &name.as_str()).await?),
-        ChargingCmd::Priority { name } => ("SetChargingPriority", ctx.manager_bool("SetChargingPriority", &name.as_str()).await?),
-        ChargingCmd::Start { percent } => ("SetChargeStartThreshold", ctx.manager_bool("SetChargeStartThreshold", &i32::from(percent)).await?),
-        ChargingCmd::End { percent } => ("SetChargeEndThreshold", ctx.manager_bool("SetChargeEndThreshold", &i32::from(percent)).await?),
-        ChargingCmd::Type { name } => ("SetChargeType", ctx.manager_bool("SetChargeType", &name.as_str()).await?),
+        ChargingCmd::Profile { name } => (
+            "SetChargingProfile",
+            ctx.manager_bool("SetChargingProfile", &name.as_str())
+                .await?,
+        ),
+        ChargingCmd::Priority { name } => (
+            "SetChargingPriority",
+            ctx.manager_bool("SetChargingPriority", &name.as_str())
+                .await?,
+        ),
+        ChargingCmd::Start { percent } => (
+            "SetChargeStartThreshold",
+            ctx.manager_bool("SetChargeStartThreshold", &i32::from(percent))
+                .await?,
+        ),
+        ChargingCmd::End { percent } => (
+            "SetChargeEndThreshold",
+            ctx.manager_bool("SetChargeEndThreshold", &i32::from(percent))
+                .await?,
+        ),
+        ChargingCmd::Type { name } => (
+            "SetChargeType",
+            ctx.manager_bool("SetChargeType", &name.as_str()).await?,
+        ),
     };
     ctx.done(ok, &format!("{method}: {ok}"))
 }
@@ -582,7 +650,10 @@ async fn tdp_cmd(ctx: &mut Ctx, sub: TdpCmd) -> Result<()> {
             ctx.emit(&json!(values))
         }
         TdpCmd::Set { watts } => {
-            let ok: bool = ctx.bus.call(Target::AdminHw, "SetTdpValues", &watts).await?;
+            let ok: bool = ctx
+                .bus
+                .call(Target::AdminHw, "SetTdpValues", &watts)
+                .await?;
             ctx.done(ok, &format!("TDP {watts:?} W: {ok}"))
         }
         TdpCmd::Reset => {
@@ -592,51 +663,5 @@ async fn tdp_cmd(ctx: &mut Ctx, sub: TdpCmd) -> Result<()> {
                 .await?;
             ctx.done(ok, &format!("TDP remis aux maxima firmware: {ok}"))
         }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn collection() -> ProfileCollection {
-        ProfileCollection::new(vec![
-            Profile::new("custom-a", "Travail"),
-            Profile::new("custom-b", "Jeu"),
-        ])
-    }
-
-    #[test]
-    fn resolves_by_id_and_by_name() {
-        let collection = collection();
-        assert_eq!(resolve_profile(&collection, "custom-a").unwrap().name, "Travail");
-        assert_eq!(resolve_profile(&collection, "jeu").unwrap().id.as_str(), "custom-b");
-        assert!(resolve_profile(&collection, "nope").is_err());
-    }
-
-    #[test]
-    fn ambiguous_name_is_rejected() {
-        let collection = ProfileCollection::new(vec![
-            Profile::new("a", "Même"),
-            Profile::new("b", "même"),
-        ]);
-        assert!(resolve_profile(&collection, "MÊME").is_err() || resolve_profile(&collection, "même").is_err());
-    }
-
-    #[test]
-    fn apply_path_updates_and_rejects_unknown_keys() {
-        let profile = Profile::new("custom-a", "Travail");
-        let parse = |doc: Value| serde_json::from_value::<Profile>(doc).map_err(Into::into);
-        let updated = apply_path(&profile, "name", "Bureau", parse).unwrap();
-        assert_eq!(updated.name, "Bureau");
-        // Une clé imbriquée inconnue est perdue au décodage : erreur.
-        assert!(apply_path(&profile, "display.nonexistent", "1", parse).is_err());
-    }
-
-    #[test]
-    fn presets_are_not_editable() {
-        let mut collection =
-            ProfileCollection::new(vec![Profile::new("__office__", "Office")]);
-        assert!(editable(&mut collection, "__office__").is_err());
     }
 }

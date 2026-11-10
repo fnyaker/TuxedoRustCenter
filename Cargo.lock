@@ -1048,10 +1048,24 @@ dependencies = [
  "clap_complete",
  "serde",
  "serde_json",
+ "tcc-client",
  "tcc-core",
  "tcc-ipc",
  "tempfile",
  "tokio",
+ "zbus",
+]
+
+[[package]]
+name = "tcc-client"
+version = "0.1.1"
+dependencies = [
+ "anyhow",
+ "serde",
+ "serde_json",
+ "tcc-core",
+ "tcc-ipc",
+ "tempfile",
  "zbus",
 ]
 

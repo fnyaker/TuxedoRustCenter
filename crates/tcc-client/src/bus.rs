@@ -72,7 +72,12 @@ impl Bus {
         R: DeserializeOwned + zbus::zvariant::Type,
     {
         let (service, path, interface, session) = match target {
-            Target::Daemon => (daemon_service(), DBUS_PATH, DBUS_INTERFACE, self.dev_session),
+            Target::Daemon => (
+                daemon_service(),
+                DBUS_PATH,
+                DBUS_INTERFACE,
+                self.dev_session,
+            ),
             Target::Manager => (
                 daemon_service(),
                 DBUS_PATH,

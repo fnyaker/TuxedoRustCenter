@@ -521,7 +521,7 @@ async fn stats_cmd(ctx: &mut Ctx, no_sensors: bool) -> Result<()> {
             let snapshot: Value = serde_json::from_str(&raw).unwrap_or(Value::Null);
             let sensors = &snapshot["sensors"];
             if sensors["enabled"].as_bool() == Some(true) {
-                cpu_power = sensors["cpu"]["packagePowerW"].as_f64();
+                cpu_power = sensors["cpu"]["powerW"].as_f64();
                 cpu_temp = sensors["cpu"]["temperatureC"].as_f64();
             } else {
                 // Bail de 10 s : renouvelé par les lectures suivantes ; la

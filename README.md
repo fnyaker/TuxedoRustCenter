@@ -129,6 +129,20 @@ The package is `Conflicts`/`Provides` with `tuxedo-control-center`: it replaces
 the original, but removing it and migrating profiles is covered in
 [`docs/packaging/MIGRATION.md`](docs/packaging/MIGRATION.md).
 
+### Omarchy bar widget
+
+On Omarchy, add the bar widget (CPU load, battery power, active profile and
+profile switcher) with one command:
+
+```sh
+omarchy plugin add https://github.com/fnyaker/omarchy-tcc-stats.git --enable
+```
+
+It calls `tcc-cli`, so the package above must be installed. Without network
+access, `tcc-cli omarchy-plugin install` followed by
+`omarchy plugin enable tuxedo.tcc-stats` installs the copy shipped in the
+package.
+
 ### Building from source
 
 Requirements: Rust 1.85+, Qt 6 (Core, Gui, Widgets, Quick, QuickControls2),

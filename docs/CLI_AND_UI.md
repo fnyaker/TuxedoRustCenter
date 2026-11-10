@@ -49,10 +49,29 @@ du QML : le plugin ne contient que de la présentation et appelle `tcc-cli`
 `stats --no-sensors` (pas de collecte de capteurs) ; panneau ouvert, la
 puissance CPU active la collecte (bail de 10 s).
 
+Installation simplifiée, par la commande d'Omarchy (clone le dépôt dédié
+[`fnyaker/omarchy-tcc-stats`](https://github.com/fnyaker/omarchy-tcc-stats),
+valide le manifeste et active le widget) :
+
+```
+omarchy plugin add https://github.com/fnyaker/omarchy-tcc-stats.git --enable
+```
+
+Mise à jour et retrait : `omarchy plugin update tuxedo.tcc-stats`,
+`omarchy plugin remove tuxedo.tcc-stats`. Si le plugin a déjà été installé
+par `tcc-cli`, le retirer d'abord (`tcc-cli omarchy-plugin uninstall`) :
+Omarchy refuse un identifiant déjà présent.
+
+Sans réseau, depuis la copie livrée dans le paquet :
+
 ```
 tcc-cli omarchy-plugin install
 omarchy plugin enable tuxedo.tcc-stats
 ```
+
+Le dépôt dédié est un miroir de `packaging/omarchy-plugin/tuxedo.tcc-stats` :
+les modifications se font ici, puis y sont recopiées à chaque version (Omarchy
+exige un `manifest.json` à la racine du dépôt cloné).
 
 ## Interface gpui
 

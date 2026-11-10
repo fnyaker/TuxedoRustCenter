@@ -4,250 +4,198 @@
 
 //! Textes de l'interface : anglais (repli), français et allemand.
 //!
-//! La langue vient de `LC_ALL`, `LC_MESSAGES`, `LANGUAGE` puis `LANG`. Les
-//! paramètres sont écrits `{nom}` et remplacés par [`tf`]. Les tests vérifient
-//! que chaque clé existe dans les trois langues, avec les mêmes paramètres, et
-//! que chaque clé utilisée dans le code existe.
+//! Le dictionnaire principal ([`crate::strings`]) est celui de l'interface
+//! Qt : mêmes clés, mêmes textes, paramètres `%1`..`%9`. [`EXTRA`] ne contient
+//! que les textes propres à l'interface gpui.
+//!
+//! La langue vient du réglage enregistré, sinon de `LC_ALL`, `LC_MESSAGES`,
+//! `LANGUAGE` puis `LANG`. Elle se change à chaud avec [`set_lang`].
 
-use std::sync::OnceLock;
+use std::sync::atomic::{AtomicU8, Ordering};
 
+use crate::strings::STRINGS;
+
+/// Langue de l'interface.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Lang {
+pub enum Lang {
     En,
     Fr,
     De,
 }
 
-/// `(clé, en, fr, de)`.
-const STRINGS: &[(&str, &str, &str, &str)] = &[
+impl Lang {
+    /// Langues proposées, dans l'ordre du sélecteur.
+    pub const ALL: [Self; 3] = [Self::Fr, Self::En, Self::De];
+
+    /// Code ISO (`en`, `fr`, `de`).
+    #[must_use]
+    pub fn code(self) -> &'static str {
+        match self {
+            Self::En => "en",
+            Self::Fr => "fr",
+            Self::De => "de",
+        }
+    }
+
+    /// Nom de la langue, dans cette langue.
+    #[must_use]
+    pub fn native_name(self) -> &'static str {
+        match self {
+            Self::En => "English",
+            Self::Fr => "Français",
+            Self::De => "Deutsch",
+        }
+    }
+
+    /// Langue d'un code ISO ou d'une locale (`fr`, `fr_FR.UTF-8`).
+    #[must_use]
+    pub fn parse(raw: &str) -> Option<Self> {
+        let raw = raw.to_ascii_lowercase();
+        if raw.starts_with("fr") {
+            Some(Self::Fr)
+        } else if raw.starts_with("de") {
+            Some(Self::De)
+        } else if raw.starts_with("en") {
+            Some(Self::En)
+        } else {
+            None
+        }
+    }
+
+    fn index(self) -> u8 {
+        match self {
+            Self::En => 0,
+            Self::Fr => 1,
+            Self::De => 2,
+        }
+    }
+}
+
+/// Textes propres à l'interface gpui : `(clé, en, fr, de)`, trié par clé.
+const EXTRA: &[(&str, &str, &str, &str)] = &[
     (
-        "app.title",
-        "TUXEDO Control Center",
-        "TUXEDO Control Center",
-        "TUXEDO Control Center",
+        "gpui.autostartSaved",
+        "Autostart updated",
+        "Démarrage automatique mis à jour",
+        "Autostart aktualisiert",
     ),
-    ("nav.dashboard", "Dashboard", "Tableau de bord", "Übersicht"),
-    ("nav.profiles", "Profiles", "Profils", "Profile"),
-    ("nav.settings", "Settings", "Réglages", "Einstellungen"),
-    ("nav.hardware", "Hardware", "Matériel", "Hardware"),
+    ("gpui.battery", "Battery", "Batterie", "Akku"),
+    ("gpui.batteryCharge", "Charge", "Charge", "Ladestand"),
     (
-        "status.connected",
-        "tccd connected",
-        "tccd connecté",
-        "tccd verbunden",
+        "gpui.curveSelected",
+        "Selected point",
+        "Point sélectionné",
+        "Ausgewählter Punkt",
     ),
     (
-        "status.offline",
-        "tccd unreachable",
-        "tccd injoignable",
-        "tccd nicht erreichbar",
+        "gpui.displayBackend",
+        "Display backend",
+        "Backend d'affichage",
+        "Anzeige-Backend",
     ),
     (
-        "dash.activeProfile",
-        "Active profile",
-        "Profil actif",
-        "Aktives Profil",
+        "gpui.displayCurrent",
+        "Current mode",
+        "Mode courant",
+        "Aktueller Modus",
     ),
-    ("dash.ac", "On AC", "Secteur", "Netzbetrieb"),
-    ("dash.battery", "On battery", "Batterie", "Akkubetrieb"),
-    ("dash.ppd", "PPD {value}", "PPD {value}", "PPD {value}"),
-    ("dash.manual", "Manual", "Manuel", "Manuell"),
-    ("dash.auto", "Automatic", "Automatique", "Automatisch"),
-    ("dash.cpu", "Processor", "Processeur", "Prozessor"),
-    ("dash.usage", "Usage", "Charge", "Auslastung"),
-    ("dash.power", "Power", "Puissance", "Leistung"),
     (
-        "dash.temperature",
-        "Temperature",
-        "Température",
-        "Temperatur",
+        "gpui.displayModes",
+        "Available modes",
+        "Modes disponibles",
+        "Verfügbare Modi",
     ),
-    ("dash.batteryCard", "Battery", "Batterie", "Akku"),
-    ("dash.charge", "Charge", "Charge", "Ladestand"),
+    ("gpui.fanNumber", "Fan %1", "Ventilateur %1", "Lüfter %1"),
     (
-        "dash.noBattery",
+        "gpui.noBattery",
         "No battery detected",
         "Aucune batterie détectée",
         "Kein Akku erkannt",
     ),
-    ("dash.fans", "Fans", "Ventilateurs", "Lüfter"),
     (
-        "dash.noFans",
-        "No controllable fan",
-        "Aucun ventilateur contrôlable",
-        "Kein steuerbarer Lüfter",
-    ),
-    ("dash.fanSpeed", "Fan speed", "Vitesse", "Drehzahl"),
-    ("common.apply", "Apply", "Appliquer", "Anwenden"),
-    ("common.create", "Create", "Créer", "Erstellen"),
-    ("common.copy", "Copy", "Copier", "Kopieren"),
-    ("common.delete", "Delete", "Supprimer", "Löschen"),
-    ("common.activate", "Activate", "Activer", "Aktivieren"),
-    (
-        "common.copySuffix",
-        "{name} (copy)",
-        "{name} (copie)",
-        "{name} (Kopie)",
-    ),
-    ("profiles.none", "No profile", "Aucun profil", "Kein Profil"),
-    (
-        "profiles.noneHint",
-        "The daemon returned no profile.",
-        "Le daemon n'a renvoyé aucun profil.",
-        "Der Daemon hat kein Profil geliefert.",
-    ),
-    ("profiles.preset", "Preset", "Preset", "Voreinstellung"),
-    ("profiles.active", "Active", "Actif", "Aktiv"),
-    (
-        "profiles.readOnly",
-        "Read-only preset: copy it to edit it.",
-        "Preset en lecture seule : copiez-le pour le modifier.",
-        "Schreibgeschützte Voreinstellung: zum Bearbeiten kopieren.",
+        "gpui.quickSwitch",
+        "Switch profile",
+        "Changer de profil",
+        "Profil wechseln",
     ),
     (
-        "profiles.parameters",
-        "Parameters",
-        "Paramètres",
-        "Parameter",
-    ),
-    ("settings.title", "Settings", "Réglages", "Einstellungen"),
-    (
-        "settings.hint",
-        "Every change is saved through tccd-admin (polkit).",
-        "Chaque modification est enregistrée via tccd-admin (polkit).",
-        "Jede Änderung wird über tccd-admin gespeichert (polkit).",
+        "gpui.removePoint",
+        "Remove point",
+        "Supprimer le point",
+        "Punkt entfernen",
     ),
     (
-        "hw.charging",
-        "Battery charging",
-        "Charge de la batterie",
-        "Akkuladung",
+        "gpui.themeFollowsSystem",
+        "Colors follow the current Omarchy theme.",
+        "Les couleurs suivent le thème Omarchy courant.",
+        "Die Farben folgen dem aktuellen Omarchy-Design.",
     ),
-    (
-        "hw.chargeProfile",
-        "Charging profile",
-        "Profil de charge",
-        "Ladeprofil",
-    ),
-    ("hw.chargePriority", "Priority", "Priorité", "Priorität"),
-    ("hw.start", "Start", "Début", "Start"),
-    ("hw.end", "End", "Fin", "Ende"),
-    (
-        "hw.chargeUnavailable",
-        "Charge control is not available on this machine",
-        "Contrôle de charge non disponible sur cette machine",
-        "Ladesteuerung auf diesem Gerät nicht verfügbar",
-    ),
-    ("hw.misc", "Other", "Divers", "Sonstiges"),
-    ("hw.fnLock", "Fn lock", "Verrou Fn", "Fn-Sperre"),
-    ("hw.tdp", "TDP (W)", "TDP (W)", "TDP (W)"),
-    (
-        "hw.nothing",
-        "No additional feature available",
-        "Aucune fonction supplémentaire disponible",
-        "Keine weiteren Funktionen verfügbar",
-    ),
-    ("hw.sensors", "Sensors", "Capteurs", "Sensoren"),
-    (
-        "hw.noGpu",
-        "No GPU detected or sensors inactive",
-        "Aucun GPU détecté ou capteurs inactifs",
-        "Keine GPU erkannt oder Sensoren inaktiv",
-    ),
-    (
-        "msg.profileActive",
-        "Active profile: {id}",
-        "Profil actif : {id}",
-        "Aktives Profil: {id}",
-    ),
-    (
-        "msg.backToAuto",
-        "Back to automatic switching",
-        "Retour à la bascule automatique",
-        "Zurück zur automatischen Umschaltung",
-    ),
-    (
-        "msg.created",
-        "Profile created",
-        "Profil créé",
-        "Profil erstellt",
-    ),
-    (
-        "msg.copied",
-        "Profile copied",
-        "Profil copié",
-        "Profil kopiert",
-    ),
-    (
-        "msg.deleted",
-        "Profile deleted",
-        "Profil supprimé",
-        "Profil gelöscht",
-    ),
-    (
-        "msg.saved",
-        "{key} saved",
-        "{key} enregistré",
-        "{key} gespeichert",
-    ),
-    (
-        "msg.applied",
-        "{call} applied",
-        "{call} appliqué",
-        "{call} angewendet",
-    ),
-    (
-        "msg.fnLock",
-        "Fn lock applied",
-        "Verrou Fn appliqué",
-        "Fn-Sperre angewendet",
-    ),
-    (
-        "msg.tdp",
-        "TDP limits applied",
-        "Limites TDP appliquées",
-        "TDP-Grenzen angewendet",
-    ),
+    ("gpui.view", "View", "Voir", "Ansehen"),
 ];
+
+static LANG: AtomicU8 = AtomicU8::new(0);
 
 fn detect(vars: &[Option<String>]) -> Lang {
     for value in vars.iter().flatten() {
-        let first = value.split(':').next().unwrap_or("").to_ascii_lowercase();
-        if first.is_empty() || first == "c" || first == "posix" {
+        let first = value.split(':').next().unwrap_or("");
+        if first.is_empty()
+            || first.eq_ignore_ascii_case("c")
+            || first.eq_ignore_ascii_case("posix")
+        {
             continue;
         }
-        return if first.starts_with("fr") {
-            Lang::Fr
-        } else if first.starts_with("de") {
-            Lang::De
-        } else {
-            Lang::En
-        };
+        return Lang::parse(first).unwrap_or(Lang::En);
     }
     Lang::En
 }
 
-fn lang() -> Lang {
-    static LANG: OnceLock<Lang> = OnceLock::new();
-    *LANG.get_or_init(|| {
+/// Initialise la langue : `saved` (réglage enregistré) prime sur
+/// l'environnement.
+pub fn init(saved: Option<Lang>) {
+    let lang = saved.unwrap_or_else(|| {
         detect(&[
             std::env::var("LC_ALL").ok(),
             std::env::var("LC_MESSAGES").ok(),
             std::env::var("LANGUAGE").ok(),
             std::env::var("LANG").ok(),
         ])
+    });
+    set_lang(lang);
+}
+
+/// Change la langue de l'interface.
+pub fn set_lang(lang: Lang) {
+    LANG.store(lang.index(), Ordering::Relaxed);
+}
+
+/// Langue courante.
+#[must_use]
+pub fn lang() -> Lang {
+    match LANG.load(Ordering::Relaxed) {
+        1 => Lang::Fr,
+        2 => Lang::De,
+        _ => Lang::En,
+    }
+}
+
+fn find(table: &'static [(&str, &str, &str, &str)], lang: Lang, key: &str) -> Option<&'static str> {
+    let index = table.binary_search_by(|row| row.0.cmp(key)).ok()?;
+    let row = table.get(index)?;
+    Some(match lang {
+        Lang::En => row.1,
+        Lang::Fr => row.2,
+        Lang::De => row.3,
     })
 }
 
 fn lookup(lang: Lang, key: &str) -> Option<&'static str> {
-    STRINGS
-        .iter()
-        .find(|row| row.0 == key)
-        .map(|row| match lang {
-            Lang::En => row.1,
-            Lang::Fr => row.2,
-            Lang::De => row.3,
-        })
+    find(STRINGS, lang, key).or_else(|| find(EXTRA, lang, key))
+}
+
+/// Vrai si `key` existe (utile pour les libellés dérivés d'une valeur).
+#[must_use]
+pub fn has(key: &str) -> bool {
+    lookup(Lang::En, key).is_some()
 }
 
 /// Texte de `key` dans la langue courante (la clé elle-même si inconnue).
@@ -256,59 +204,134 @@ pub fn t(key: &str) -> String {
     lookup(lang(), key).unwrap_or(key).to_owned()
 }
 
-/// Comme [`t`], en remplaçant chaque `{nom}` par sa valeur.
+/// Comme [`t`], en remplaçant `%1`, `%2`… par les arguments.
 #[must_use]
-pub fn tf(key: &str, args: &[(&str, &str)]) -> String {
+pub fn tf(key: &str, args: &[&str]) -> String {
     let mut text = t(key);
-    for (name, value) in args {
-        text = text.replace(&format!("{{{name}}}"), value);
+    for (index, value) in args.iter().enumerate() {
+        text = text.replacen(&format!("%{}", index + 1), value, 1);
     }
     text
+}
+
+/// `n profil` / `n profils`.
+#[must_use]
+pub fn plural(n: usize, one: &str, many: &str) -> String {
+    t(if n > 1 { many } else { one })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::collections::BTreeSet;
+    use std::collections::{BTreeMap, BTreeSet};
 
-    fn placeholders(text: &str) -> BTreeSet<String> {
-        text.split('{')
-            .skip(1)
-            .filter_map(|rest| rest.split('}').next())
-            .map(str::to_owned)
-            .collect()
+    fn placeholders(text: &str) -> BTreeSet<char> {
+        let mut out = BTreeSet::new();
+        let mut chars = text.chars().peekable();
+        while let Some(c) = chars.next() {
+            if c == '%'
+                && let Some(digit) = chars.peek().filter(|d| d.is_ascii_digit())
+            {
+                out.insert(*digit);
+            }
+        }
+        out
     }
 
     #[test]
-    fn every_key_is_complete_unique_and_consistent() {
-        let mut seen = BTreeSet::new();
-        for (key, en, fr, de) in STRINGS {
-            assert!(seen.insert(*key), "clé dupliquée : {key}");
-            for text in [en, fr, de] {
-                assert!(!text.is_empty(), "{key} : traduction vide");
+    fn tables_are_sorted_complete_and_consistent() {
+        for table in [STRINGS, EXTRA] {
+            for pair in table.windows(2) {
+                assert!(pair[0].0 < pair[1].0, "ordre ou doublon : {}", pair[1].0);
             }
-            assert_eq!(placeholders(en), placeholders(fr), "{key} : paramètres fr");
-            assert_eq!(placeholders(en), placeholders(de), "{key} : paramètres de");
+            for (key, en, fr, de) in table {
+                for text in [en, fr, de] {
+                    assert!(!text.is_empty(), "{key} : traduction vide");
+                }
+                assert_eq!(placeholders(en), placeholders(fr), "{key} : paramètres fr");
+                assert_eq!(placeholders(en), placeholders(de), "{key} : paramètres de");
+            }
+        }
+        for (key, ..) in EXTRA {
+            assert!(find(STRINGS, Lang::En, key).is_none(), "{key} déjà partagé");
         }
     }
 
     #[test]
     fn every_key_used_in_the_code_exists() {
+        let sources = [
+            include_str!("app.rs"),
+            include_str!("worker.rs"),
+            include_str!("model.rs"),
+            include_str!("widgets.rs"),
+            include_str!("fan_curve.rs"),
+            include_str!("pages/dashboard.rs"),
+            include_str!("pages/profiles.rs"),
+            include_str!("pages/editor.rs"),
+            include_str!("pages/settings.rs"),
+            include_str!("pages/tools.rs"),
+            include_str!("pages/info.rs"),
+        ];
         let mut checked = 0;
-        for source in [include_str!("app.rs"), include_str!("worker.rs")] {
-            for piece in source
-                .split("t(\"")
-                .skip(1)
-                .chain(source.split("tf(\"").skip(1))
-            {
-                let key = piece.split('"').next().unwrap_or("");
-                if key.contains('.') {
-                    assert!(lookup(Lang::En, key).is_some(), "clé inconnue : {key}");
-                    checked += 1;
+        for source in sources {
+            for marker in ["t(\"", "tf(\"", "tr(\"", "has(\""] {
+                for piece in source.split(marker).skip(1) {
+                    let key = piece.split('"').next().unwrap_or("");
+                    // Les préfixes dynamiques se terminent par un point.
+                    if key.contains('.') && !key.ends_with('.') && !key.contains(' ') {
+                        assert!(lookup(Lang::En, key).is_some(), "clé inconnue : {key}");
+                        checked += 1;
+                    }
                 }
             }
         }
-        assert!(checked > 30, "trop peu de clés trouvées : {checked}");
+        assert!(checked > 200, "trop peu de clés trouvées : {checked}");
+    }
+
+    /// Le dictionnaire partagé doit rester identique à celui de l'interface
+    /// Qt. Sans les sources Qt (archive partielle), le test ne vérifie rien.
+    #[test]
+    fn shared_strings_match_the_qt_table() {
+        let path = concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../tcc-gui/qml/core/Strings.qml"
+        );
+        let Ok(source) = std::fs::read_to_string(path) else {
+            return;
+        };
+        let mut qt: BTreeMap<String, [String; 3]> = BTreeMap::new();
+        let mut slot = None;
+        for line in source.lines() {
+            let line = line.trim();
+            if let Some(rest) = line.strip_prefix("readonly property var ") {
+                slot = match rest.split(':').next() {
+                    Some("en") => Some(0),
+                    Some("fr") => Some(1),
+                    Some("de") => Some(2),
+                    _ => None,
+                };
+                continue;
+            }
+            let (Some(slot), Some(rest)) = (slot, line.strip_prefix('"')) else {
+                continue;
+            };
+            let Some((key, value)) = rest.split_once("\": ") else {
+                continue;
+            };
+            let value = value.trim_end_matches(',');
+            let Ok(text) = serde_json::from_str::<String>(value) else {
+                continue;
+            };
+            qt.entry(key.to_owned()).or_default()[slot] = text;
+        }
+        assert_eq!(qt.len(), STRINGS.len(), "nombre de clés");
+        for (key, en, fr, de) in STRINGS {
+            let row = qt.get(*key).unwrap_or_else(|| panic!("{key} absent de Qt"));
+            assert_eq!(
+                [row[0].as_str(), row[1].as_str(), row[2].as_str()],
+                [*en, *fr, *de]
+            );
+        }
     }
 
     #[test]
@@ -320,13 +343,16 @@ mod tests {
         assert_eq!(detect(&[v("ja_JP.UTF-8")]), Lang::En);
         assert_eq!(detect(&[None, None]), Lang::En);
         assert_eq!(detect(&[v("fr:en")]), Lang::Fr);
+        assert_eq!(Lang::parse("xx"), None);
     }
 
     #[test]
-    fn substitutes_parameters() {
-        assert_eq!(
-            tf("msg.saved", &[("key", "fahrenheit")]).replace("fahrenheit", "K"),
-            t("msg.saved").replace("{key}", "K")
-        );
+    fn substitutes_positional_parameters() {
+        assert_eq!(lookup(Lang::En, "fanCurve.count"), Some("%1 / %2 points"));
+        let text = lookup(Lang::En, "fanCurve.count")
+            .map(|raw| raw.replacen("%1", "3", 1).replacen("%2", "256", 1));
+        assert_eq!(text.as_deref(), Some("3 / 256 points"));
+        assert!(has("common.apply"));
+        assert!(!has("nope.nope"));
     }
 }

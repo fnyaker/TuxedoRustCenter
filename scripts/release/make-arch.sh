@@ -69,7 +69,7 @@ tcc_log "makepkg (utilisateur $(id -un))"
     SRCDEST="$work" \
     BUILDDIR="$work/build" \
     PKGEXT='.pkg.tar.zst' \
-    makepkg --noconfirm --nocheck --force
+    makepkg --noconfirm --nocheck --force ${TCC_MAKEPKG_FLAGS:-}
 )
 
 shopt -s nullglob

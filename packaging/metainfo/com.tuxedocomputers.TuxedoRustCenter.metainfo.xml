@@ -81,6 +81,11 @@
   <content_rating type="oars-1.1"/>
 
   <releases>
+    <release version="0.1.3" date="2026-11-10" type="development">
+      <description>
+        <p>Interface gpui complète : dashboard avec statistiques GPU, éditeur de profil avec courbe de ventilation éditable, outils et réglages.</p>
+      </description>
+    </release>
     <release version="0.1.2" date="2026-11-10" type="development">
       <description>
         <p>CLI complète, choix de l'interface (Qt 6 ou gpui), plugin de barre Omarchy et tray monochrome avec recherche de profils.</p>

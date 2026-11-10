@@ -54,18 +54,53 @@ tcc-cli omarchy-plugin install
 omarchy plugin enable tuxedo.tcc-stats
 ```
 
-## Tableau de bord gpui : jauges
+## Interface gpui
 
-Jauges en arc (270°) pour la charge CPU, la puissance CPU, la température et
-chaque ventilateur. Maximum : 100 % et 100 °C ; pour la puissance, au moins
-15 W, au moins le TDP connu, relevé par paliers de 5 W dès qu'une mesure le
-dépasse (« max auto »). L'affichage suit le réglage °C/°F.
+`tcc-gpui` couvre le même périmètre que l'interface Qt, avec les mêmes textes
+(`src/strings.rs` est la copie de `Strings.qml` ; un test signale toute
+dérive) et les mêmes chemins d'écriture :
+
+| Page | Contenu |
+|---|---|
+| Dashboard | Profil actif, changement de profil (liste), profil power-profiles-daemon, jauges CPU (charge, température, fréquence, puissance), ventilateurs, iGPU et dGPU (jauges + historiques), batterie |
+| Profils | Filtres, recherche, grille/liste, activation, duplication, suppression confirmée, import/export |
+| Éditeur | Général, affichage (résolution et taux réellement exposés par l'agent), CPU, webcam, ventilateurs avec **courbe éditable à la souris**, ODM/TDP/cTGP par profil |
+| Outils | Minuterie d'extinction, éclairage clavier/barre, contrôles UVC |
+| Réglages | Langue, unités, domaines pilotés, Fn-Lock, matrice PPD × alimentation, charge, agent d'affichage, blocage de veille, ODM/TDP/cTGP immédiats (`AdminHw1`), autostart |
+| À propos | Versions, appareil, support, licences |
+
+Écritures : profil temporaire via `SetTempProfile`/`ClearTempProfile` ;
+profils et réglages via `Admin1.SaveProfilesJSON`/`SaveSettingsJSON` ; ODM, TDP
+et cTGP immédiats via `AdminHw1` ; UVC via `User1.SetUvcControl` ; veille via
+un inhibiteur `idle` de logind. Les setters `Manager1` (refusés par la
+politique D-Bus) ne sont pas appelés. Le profil PPD se change par
+`net.hadess.PowerProfiles.ActiveProfile` : PPD reste propriétaire et `tccd`
+suit sa matrice.
+
+Courbe de ventilation : glisser un point, double-clic pour en ajouter, clic
+droit ou Suppr pour en enlever, flèches pour ajuster le point sélectionné.
+Éditable seulement avec le profil de ventilation « Personnalisé ».
+
+Jauges en arc (270°). Puissance CPU : au moins 15 W, au moins le TDP connu,
+relevée par paliers de 5 W (« max auto »). L'affichage suit °C/°F. La collecte
+des capteurs n'est demandée que lorsque le Dashboard est affiché.
+
+Options : `--page dashboard|profiles|tools|settings|info`, `--edit <profil>`
+(identifiant ou nom), `--zoom <30..300>`. Préférences locales (langue, vue en
+liste) : `~/.config/tuxedo-rust-center/gpui.json`.
+
+Écarts assumés avec Qt : le thème suit Omarchy (pas de sélecteur
+clair/sombre), pas de données de démonstration hors connexion, pas de
+changelog statique, description de profil sur une ligne, pas de détection de
+conflit à l'enregistrement (la dernière écriture gagne, l'éditeur signale un
+profil modifié ailleurs).
 
 ## Langues
 
 `tcc-gpui` (en, fr, de), le plugin de barre (en, fr, de ; les autres langues
 d'Omarchy retombent sur l'anglais) et la GUI Qt (fr, en, de) suivent la langue
-du système (`LC_ALL`, `LC_MESSAGES`, `LANGUAGE`, `LANG`). Des tests vérifient
+du système (`LC_ALL`, `LC_MESSAGES`, `LANGUAGE`, `LANG`) ; `tcc-gpui` permet
+aussi de la choisir dans Réglages. Des tests vérifient
 que chaque clé existe dans toutes les langues et que chaque clé utilisée dans
 le code existe. Les messages de `tcc-cli` ne sont pas encore traduits.
 

@@ -16,7 +16,7 @@
 %bcond_with gpui
 
 Name:           tuxedo-rust-center
-Version:        0.1.2
+Version:        0.1.3
 Release:        1%{?dist}
 Summary:        Native Qt 6 TUXEDO Control Center rewrite
 
@@ -195,6 +195,11 @@ fi
 %systemd_postun_with_restart tccd.service
 
 %changelog
+* Tue Nov 10 2026 TuxedoRustCenter contributors <maintainers@tuxedorustcenter.invalid> - 0.1.3-1
+- Interface gpui complète (dashboard avec stats GPU, profils, éditeur avec
+  courbe de ventilation éditable, outils, réglages) ; tccd-admin accepte une
+  sauvegarde quand d'anciens presets sont présents sur disque.
+
 * Tue Nov 10 2026 TuxedoRustCenter contributors <maintainers@tuxedorustcenter.invalid> - 0.1.2-1
 - CLI complète (tcc-cli), lanceur d'interface auto/qt6/gpui, plugin de barre
   Omarchy, tray monochrome avec recherche de profils ; interface gpui avec

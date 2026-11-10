@@ -13,13 +13,14 @@
 #![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used))]
 
 mod cli;
+mod plugin;
 
 use anyhow::{Context, Result};
 use clap::{CommandFactory, Parser};
 use serde_json::{Value, json};
 use tcc_core::{Profile, ProfileCollection, Settings};
 
-use cli::{ChargingCmd, Cli, Cmd, LightbarArg, ProfileCmd, SettingsCmd, TdpCmd, Toggle};
+use cli::{ChargingCmd, Cli, Cmd, LightbarArg, PluginCmd, ProfileCmd, SettingsCmd, TdpCmd, Toggle};
 use tcc_client::bus::Target;
 use tcc_client::client::Client;
 use tcc_client::ops::resolve_profile;
@@ -37,6 +38,9 @@ fn main() -> Result<()> {
         );
         return Ok(());
     }
+    if let Cmd::OmarchyPlugin(sub) = command {
+        return plugin_cmd(sub, cli.json);
+    }
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
@@ -50,6 +54,43 @@ fn main() -> Result<()> {
         compact: cli.json,
     };
     runtime.block_on(run(&mut ctx, command))
+}
+
+/// Installation du plugin de barre Omarchy (sans daemon).
+fn plugin_cmd(sub: PluginCmd, compact: bool) -> Result<()> {
+    let dir = plugin::plugins_dir()?;
+    let (message, ok) = match sub {
+        PluginCmd::Install { source } => {
+            let source = source.unwrap_or_else(|| plugin::INSTALLED_SOURCE.to_owned());
+            let installed = plugin::install(std::path::Path::new(&source), &dir)
+                .with_context(|| format!("installation depuis {source}"))?;
+            (
+                format!(
+                    "plugin installé dans {}\nActivez-le : omarchy plugin enable {}",
+                    installed.display(),
+                    plugin::PLUGIN_ID
+                ),
+                true,
+            )
+        }
+        PluginCmd::Uninstall => {
+            let removed = plugin::uninstall(&dir)?;
+            (
+                if removed {
+                    "plugin supprimé".to_owned()
+                } else {
+                    "plugin non installé".to_owned()
+                },
+                removed,
+            )
+        }
+    };
+    if compact {
+        println!("{}", json!({"ok": ok, "message": message}));
+    } else {
+        println!("{message}");
+    }
+    Ok(())
 }
 
 struct Ctx {
@@ -275,7 +316,8 @@ async fn run(ctx: &mut Ctx, command: Cmd) -> Result<()> {
                 .await?;
             ctx.done(ok, &format!("configuration rechargée: {ok}"))
         }
-        Cmd::Completions { .. } => Ok(()),
+        // Traités avant la connexion D-Bus (voir `main`).
+        Cmd::Completions { .. } | Cmd::OmarchyPlugin(_) => Ok(()),
     }
 }
 

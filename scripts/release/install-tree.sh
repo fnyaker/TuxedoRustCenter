@@ -258,6 +258,10 @@ copy_tree "$REPO_ROOT/crates/tcc-gui/qml" \
     "$DESTDIR/usr/share/tuxedo-rust-center/qml"
 copy_tree "$REPO_ROOT/crates/tcc-gui/assets" \
     "$DESTDIR/usr/share/tuxedo-rust-center/assets"
+# Plugin de barre Omarchy (QML fin appelant tcc-cli) ; `tcc-cli omarchy-plugin
+# install` le copie dans ~/.config/omarchy/plugins.
+copy_tree "$REPO_ROOT/packaging/omarchy-plugin/tuxedo.tcc-stats" \
+    "$DESTDIR/usr/share/tuxedo-rust-center/omarchy-plugin/tuxedo.tcc-stats"
 
 # ---------------------------------------------------------------------------
 # Configuration administrateur et état (D2)

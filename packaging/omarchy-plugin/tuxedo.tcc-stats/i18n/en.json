@@ -1,0 +1,14 @@
+{
+  "title": "TUXEDO",
+  "cpu": "CPU load",
+  "cpuPower": "CPU power",
+  "cpuTemp": "CPU temperature",
+  "battery": "Battery",
+  "batteryPower": "Battery power",
+  "profile": "Profile",
+  "auto": "Automatic",
+  "offline": "tccd is not running",
+  "manual": "Manual override",
+  "ac": "On AC",
+  "onBattery": "On battery"
+}

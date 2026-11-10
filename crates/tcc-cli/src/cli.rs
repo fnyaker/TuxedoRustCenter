@@ -146,11 +146,27 @@ pub enum Cmd {
     Admin,
     /// Recharger la configuration (service admin).
     Reload,
+    /// Plugin de barre Omarchy (QML fin qui appelle ce CLI).
+    #[command(subcommand, name = "omarchy-plugin")]
+    OmarchyPlugin(PluginCmd),
     /// Générer l'autocomplétion du shell.
     Completions {
         /// bash, zsh, fish, elvish, powershell.
         shell: Shell,
     },
+}
+
+/// Sous-commandes de `omarchy-plugin`.
+#[derive(Debug, Subcommand)]
+pub enum PluginCmd {
+    /// Installer le plugin dans ~/.config/omarchy/plugins.
+    Install {
+        /// Dossier source (défaut : celui installé par le paquet).
+        #[arg(long)]
+        source: Option<String>,
+    },
+    /// Supprimer le plugin installé.
+    Uninstall,
 }
 
 /// Argument de `lightbar`.

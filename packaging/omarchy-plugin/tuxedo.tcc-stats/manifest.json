@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "id": "tuxedo.tcc-stats",
+  "name": "TUXEDO Control Center",
+  "version": "0.1.1",
+  "author": "TuxedoRustCenter contributors",
+  "description": "CPU load, battery power, active profile and profile switcher for TUXEDO laptops",
+  "kinds": [
+    "bar-widget"
+  ],
+  "entryPoints": {
+    "barWidget": "Panel.qml"
+  },
+  "barWidget": {
+    "displayName": "TUXEDO",
+    "description": "CPU load, battery power, active profile and profile switcher",
+    "category": "System",
+    "allowMultiple": false
+  }
+}

@@ -10,6 +10,7 @@
 #![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used))]
 
 pub mod bus;
+pub mod client;
 pub mod jsonpath;
 pub mod ops;
 pub mod stats;

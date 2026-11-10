@@ -14,14 +14,15 @@
 
 mod cli;
 
-use anyhow::{Context, Result, bail};
+use anyhow::{Context, Result};
 use clap::{CommandFactory, Parser};
 use serde_json::{Value, json};
-use tcc_core::{Profile, ProfileCollection, ProfileId, Settings};
+use tcc_core::{Profile, ProfileCollection, Settings};
 
 use cli::{ChargingCmd, Cli, Cmd, LightbarArg, ProfileCmd, SettingsCmd, TdpCmd, Toggle};
-use tcc_client::bus::{Bus, Target};
-use tcc_client::ops::{apply_path, editable, resolve_profile};
+use tcc_client::bus::Target;
+use tcc_client::client::Client;
+use tcc_client::ops::resolve_profile;
 use tcc_client::{jsonpath, stats};
 
 fn main() -> Result<()> {
@@ -45,14 +46,14 @@ fn main() -> Result<()> {
         |bus| bus == cli::BusKind::Session,
     );
     let mut ctx = Ctx {
-        bus: Bus::new(dev_session),
+        client: Client::new(dev_session),
         compact: cli.json,
     };
     runtime.block_on(run(&mut ctx, command))
 }
 
 struct Ctx {
-    bus: Bus,
+    client: Client,
     compact: bool,
 }
 
@@ -83,45 +84,15 @@ impl Ctx {
     }
 
     async fn daemon_json(&mut self, target: Target, method: &str) -> Result<String> {
-        self.bus.call(target, method, &()).await
+        self.client.json(target, method).await
     }
 
     async fn load_profiles(&mut self) -> Result<ProfileCollection> {
-        let raw = self.daemon_json(Target::Daemon, "GetProfilesJSON").await?;
-        serde_json::from_str(&raw).context("collection de profils invalide")
+        self.client.load_profiles().await
     }
 
     async fn load_settings(&mut self) -> Result<Settings> {
-        let raw = self.daemon_json(Target::Daemon, "GetSettingsJSON").await?;
-        serde_json::from_str(&raw).context("réglages invalides")
-    }
-
-    async fn save_profiles(&mut self, collection: &ProfileCollection) -> Result<()> {
-        collection
-            .validate()
-            .context("collection de profils invalide")?;
-        let payload = serde_json::to_string(collection)?;
-        let ok: bool = self
-            .bus
-            .call(Target::Admin, "SaveProfilesJSON", &payload.as_str())
-            .await?;
-        if !ok {
-            bail!("SaveProfilesJSON a refusé l'écriture");
-        }
-        Ok(())
-    }
-
-    async fn save_settings(&mut self, settings: &Settings) -> Result<()> {
-        settings.validate().context("réglages invalides")?;
-        let payload = serde_json::to_string(settings)?;
-        let ok: bool = self
-            .bus
-            .call(Target::Admin, "SaveSettingsJSON", &payload.as_str())
-            .await?;
-        if !ok {
-            bail!("SaveSettingsJSON a refusé l'écriture");
-        }
-        Ok(())
+        self.client.load_settings().await
     }
 
     async fn manager_bool(
@@ -129,7 +100,7 @@ impl Ctx {
         method: &str,
         body: &(impl serde::Serialize + zbus::zvariant::DynamicType),
     ) -> Result<bool> {
-        self.bus.call(Target::Manager, method, body).await
+        self.client.bus.call(Target::Manager, method, body).await
     }
 }
 
@@ -156,14 +127,18 @@ async fn run(ctx: &mut Ctx, command: Cmd) -> Result<()> {
             ctx.emit_raw(&raw)
         }
         Cmd::Ping => {
-            let ok: bool = ctx.bus.call(Target::Daemon, "Ping", &()).await?;
+            let ok: bool = ctx.client.bus.call(Target::Daemon, "Ping", &()).await?;
             ctx.done(
                 ok,
                 &format!("tccd: {}", if ok { "vivant" } else { "injoignable" }),
             )
         }
         Cmd::DaemonVersion => {
-            let version: String = ctx.bus.call(Target::Daemon, "GetVersion", &()).await?;
+            let version: String = ctx
+                .client
+                .bus
+                .call(Target::Daemon, "GetVersion", &())
+                .await?;
             ctx.done(true, &format!("tccd {version}"))
         }
         Cmd::Profiles => profile_cmd(ctx, ProfileCmd::Dump).await,
@@ -229,6 +204,7 @@ async fn run(ctx: &mut Ctx, command: Cmd) -> Result<()> {
                 "SetOdmProfile"
             };
             let ok: bool = ctx
+                .client
                 .bus
                 .call(Target::AdminHw, method, &name.as_str())
                 .await?;
@@ -236,6 +212,7 @@ async fn run(ctx: &mut Ctx, command: Cmd) -> Result<()> {
         }
         Cmd::Ctgp { offset } => {
             let ok: bool = ctx
+                .client
                 .bus
                 .call(Target::AdminHw, "SetNvidiaCtgpOffset", &offset)
                 .await?;
@@ -243,6 +220,7 @@ async fn run(ctx: &mut Ctx, command: Cmd) -> Result<()> {
         }
         Cmd::Display => {
             let raw: String = ctx
+                .client
                 .bus
                 .call(Target::Session, "GetDisplayInfoJSON", &())
                 .await?;
@@ -250,6 +228,7 @@ async fn run(ctx: &mut Ctx, command: Cmd) -> Result<()> {
         }
         Cmd::Uvc { device, key, value } => {
             let ok: bool = ctx
+                .client
                 .bus
                 .call(
                     Target::Session,
@@ -270,9 +249,14 @@ async fn run(ctx: &mut Ctx, command: Cmd) -> Result<()> {
             )
         }
         Cmd::Admin => {
-            let ping: bool = ctx.bus.call(Target::Admin, "Ping", &()).await?;
-            let version: String = ctx.bus.call(Target::Admin, "GetVersion", &()).await?;
+            let ping: bool = ctx.client.bus.call(Target::Admin, "Ping", &()).await?;
+            let version: String = ctx
+                .client
+                .bus
+                .call(Target::Admin, "GetVersion", &())
+                .await?;
             let contract: u32 = ctx
+                .client
                 .bus
                 .call(Target::Admin, "GetContractVersion", &())
                 .await?;
@@ -284,7 +268,11 @@ async fn run(ctx: &mut Ctx, command: Cmd) -> Result<()> {
             }
         }
         Cmd::Reload => {
-            let ok: bool = ctx.bus.call(Target::Admin, "ReloadConfig", &()).await?;
+            let ok: bool = ctx
+                .client
+                .bus
+                .call(Target::Admin, "ReloadConfig", &())
+                .await?;
             ctx.done(ok, &format!("configuration rechargée: {ok}"))
         }
         Cmd::Completions { .. } => Ok(()),
@@ -339,53 +327,27 @@ async fn profile_cmd(ctx: &mut Ctx, sub: ProfileCmd) -> Result<()> {
             ctx.emit_raw(&raw)
         }
         ProfileCmd::Use { profile } => {
-            let collection = ctx.load_profiles().await?;
-            let id = resolve_profile(&collection, &profile)?
-                .id
-                .as_str()
-                .to_owned();
-            let ok: bool = ctx
-                .bus
-                .call(Target::Daemon, "SetTempProfile", &id.as_str())
-                .await?;
-            ctx.done(ok, &format!("profil temporaire '{id}': {ok}"))
+            let id = ctx.client.use_profile(&profile).await?;
+            ctx.done(true, &format!("profil temporaire '{id}': true"))
         }
         ProfileCmd::Clear => {
-            let ok: bool = ctx
-                .bus
-                .call(Target::Daemon, "ClearTempProfile", &())
-                .await?;
-            ctx.done(ok, &format!("override temporaire supprimé: {ok}"))
+            ctx.client.clear_temp().await?;
+            ctx.done(true, "override temporaire supprimé: true")
         }
         ProfileCmd::Create { name } => {
-            let mut collection = ctx.load_profiles().await?;
-            let profile = Profile::new(ProfileId::generate(), name);
-            let id = profile.id.as_str().to_owned();
-            collection.upsert(profile);
-            ctx.save_profiles(&collection).await?;
+            let id = ctx.client.create_profile(name).await?;
             ctx.done(true, &format!("profil créé: {id}"))
         }
         ProfileCmd::Copy { from, name } => {
-            let mut collection = ctx.load_profiles().await?;
-            let mut copy = resolve_profile(&collection, &from)?.clone();
-            copy.id = ProfileId::generate();
-            copy.name = name;
-            let id = copy.id.as_str().to_owned();
-            collection.upsert(copy);
-            ctx.save_profiles(&collection).await?;
+            let id = ctx.client.copy_profile(&from, name).await?;
             ctx.done(true, &format!("profil copié: {id}"))
         }
         ProfileCmd::Delete { profile } => {
-            let mut collection = ctx.load_profiles().await?;
-            let id = editable(&mut collection, &profile)?.id.clone();
-            collection.remove(&id);
-            ctx.save_profiles(&collection).await?;
-            ctx.done(true, &format!("profil supprimé: {}", id.as_str()))
+            let id = ctx.client.delete_profile(&profile).await?;
+            ctx.done(true, &format!("profil supprimé: {id}"))
         }
         ProfileCmd::Rename { profile, name } => {
-            let mut collection = ctx.load_profiles().await?;
-            editable(&mut collection, &profile)?.name = name;
-            ctx.save_profiles(&collection).await?;
+            ctx.client.rename_profile(&profile, name).await?;
             ctx.done(true, "profil renommé")
         }
         ProfileCmd::Set {
@@ -393,20 +355,7 @@ async fn profile_cmd(ctx: &mut Ctx, sub: ProfileCmd) -> Result<()> {
             key,
             value,
         } => {
-            if key == "id" || key.starts_with("id.") {
-                bail!("l'identifiant d'un profil est immuable");
-            }
-            let mut collection = ctx.load_profiles().await?;
-            let target = editable(&mut collection, &profile)?;
-            let updated = apply_path(target, &key, &value, |doc| {
-                serde_json::from_value::<Profile>(doc).context("profil invalide")
-            })?;
-            updated.validate().context("profil invalide")?;
-            if updated.extra.len() > target.extra.len() {
-                bail!("clé inconnue : {key}");
-            }
-            *target = updated;
-            ctx.save_profiles(&collection).await?;
+            ctx.client.set_profile_field(&profile, &key, &value).await?;
             ctx.done(true, &format!("{key} mis à jour"))
         }
         ProfileCmd::Get { profile, key } => {
@@ -437,15 +386,9 @@ async fn profile_cmd(ctx: &mut Ctx, sub: ProfileCmd) -> Result<()> {
             } else {
                 format!("@{file}")
             })?;
-            let mut profile: Profile =
+            let profile: Profile =
                 serde_json::from_str(&text).context("profil importé invalide")?;
-            // Toujours un nouvel identifiant : pas de collision ni de tombstone.
-            profile.id = ProfileId::generate();
-            profile.validate().context("profil importé invalide")?;
-            let id = profile.id.as_str().to_owned();
-            let mut collection = ctx.load_profiles().await?;
-            collection.upsert(profile);
-            ctx.save_profiles(&collection).await?;
+            let id = ctx.client.import_profile(profile).await?;
             ctx.done(true, &format!("profil importé: {id}"))
         }
     }
@@ -465,17 +408,7 @@ async fn settings_cmd(ctx: &mut Ctx, sub: SettingsCmd) -> Result<()> {
             ctx.emit(value)
         }
         SettingsCmd::Set { key, value } => {
-            if key.starts_with("deletedProfileIds") {
-                bail!("les tombstones de profils ne se modifient pas directement");
-            }
-            let settings = ctx.load_settings().await?;
-            let updated = apply_path(&settings, &key, &value, |doc| {
-                serde_json::from_value::<Settings>(doc).context("réglages invalides")
-            })?;
-            if updated.extra.len() > settings.extra.len() {
-                bail!("clé inconnue : {key}");
-            }
-            ctx.save_settings(&updated).await?;
+            ctx.client.set_setting(&key, &value).await?;
             ctx.done(true, &format!("{key} mis à jour"))
         }
     }
@@ -485,6 +418,7 @@ async fn sensors_cmd(ctx: &mut Ctx, action: Option<Toggle>) -> Result<()> {
     match action {
         None | Some(Toggle::Status) => {
             let on: bool = ctx
+                .client
                 .bus
                 .call(Target::Manager, "GetSensorDataCollectionStatus", &())
                 .await?;
@@ -646,11 +580,16 @@ async fn charging_cmd(ctx: &mut Ctx, sub: ChargingCmd) -> Result<()> {
 async fn tdp_cmd(ctx: &mut Ctx, sub: TdpCmd) -> Result<()> {
     match sub {
         TdpCmd::Get => {
-            let values: Vec<i32> = ctx.bus.call(Target::AdminHw, "GetTdpValues", &()).await?;
+            let values: Vec<i32> = ctx
+                .client
+                .bus
+                .call(Target::AdminHw, "GetTdpValues", &())
+                .await?;
             ctx.emit(&json!(values))
         }
         TdpCmd::Set { watts } => {
             let ok: bool = ctx
+                .client
                 .bus
                 .call(Target::AdminHw, "SetTdpValues", &watts)
                 .await?;
@@ -658,6 +597,7 @@ async fn tdp_cmd(ctx: &mut Ctx, sub: TdpCmd) -> Result<()> {
         }
         TdpCmd::Reset => {
             let ok: bool = ctx
+                .client
                 .bus
                 .call(Target::AdminHw, "SetTdpValues", &Vec::<i32>::new())
                 .await?;

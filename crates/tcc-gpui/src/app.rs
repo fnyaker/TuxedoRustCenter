@@ -21,7 +21,7 @@ use crate::worker::{Command, Handle, Snapshot};
 
 /// Pages de l'application.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Page {
+pub enum Page {
     Dashboard,
     Profiles,
     Settings,
@@ -29,6 +29,17 @@ enum Page {
 }
 
 impl Page {
+    /// `--page dashboard|profiles|settings|hardware`.
+    pub fn parse(raw: &str) -> Option<Self> {
+        match raw {
+            "dashboard" => Some(Self::Dashboard),
+            "profiles" => Some(Self::Profiles),
+            "settings" => Some(Self::Settings),
+            "hardware" => Some(Self::Hardware),
+            _ => None,
+        }
+    }
+
     const ALL: [(Self, &'static str); 4] = [
         (Self::Dashboard, "Tableau de bord"),
         (Self::Profiles, "Profils"),
@@ -76,7 +87,7 @@ fn str_of(value: &Value) -> String {
 }
 
 impl App {
-    pub fn new(handle: Handle, _window: &mut Window, cx: &mut Context<Self>) -> Self {
+    pub fn new(handle: Handle, page: Page, _window: &mut Window, cx: &mut Context<Self>) -> Self {
         // Relevé périodique de l'état publié par le thread de fond.
         cx.spawn(async move |this, cx| {
             let mut seen = 0;
@@ -101,7 +112,7 @@ impl App {
         Self {
             snap: handle.snapshot(),
             handle,
-            page: Page::Dashboard,
+            page,
             selected: None,
             inputs: HashMap::new(),
         }

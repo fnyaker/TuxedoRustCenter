@@ -86,8 +86,9 @@ Panel {
     id: button
     anchors.fill: parent
     bar: root.bar
-    // nf-fa-microchip
-    text: "\uf2db"
+    // Pas de glyphe : la police des icônes de la barre (omarchy.ttf) ne couvre
+    // pas les glyphes Nerd Font ; le libellé suffit.
+    text: ""
     labelText: Model.barLabel(root.stats)
     slotSize: Style.bar.iconSlot * (labelText !== "" && !vertical ? 3 : 1)
     tooltipText: ""

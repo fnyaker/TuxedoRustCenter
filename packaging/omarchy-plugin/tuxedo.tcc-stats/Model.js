@@ -27,7 +27,7 @@ function barLabel(stats) {
   if (stats.battery && stats.battery.present && typeof stats.battery.powerW === "number"
       && stats.battery.powerW > 0.05)
     parts.push(stats.battery.powerW.toFixed(1) + "W")
-  return parts.join(" ")
+  return parts.length ? "CPU " + parts.join(" · ") : ""
 }
 
 // Profiles as [{id, name, active}], active first match wins; empty on bad data.

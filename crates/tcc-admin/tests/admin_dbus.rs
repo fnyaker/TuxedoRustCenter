@@ -202,7 +202,7 @@ async fn ping_version_and_property_are_available() {
             .get_version()
             .await
             .expect("GetVersion")
-            .contains("0.1.0")
+            .contains(env!("CARGO_PKG_VERSION"))
     );
     assert_eq!(
         proxy

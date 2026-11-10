@@ -2,350 +2,641 @@
 //
 // Ce fichier fait partie de TuxedoRustCenter.
 
-//! CLI de diagnostic du daemon TuxedoRustCenter.
+//! CLI TuxedoRustCenter : tout ce que fait la GUI, depuis un terminal.
 //!
-//! Le CLI est non privilégié et parle au daemon via le bus système. Il sert à
-//! vérifier l'état, les profils et les réglages sans lancer la GUI.
+//! Le CLI est non privilégié. Il parle au daemon (`tccd`) pour la lecture et
+//! les réglages transitoires, et aux services d'administration à la demande
+//! (`tccd-admin`, `tccd-admin-hw`) pour tout ce qui est persistant ou
+//! privilégié ; polkit tranche dans ces services, jamais ici.
 
 #![forbid(unsafe_code)]
 #![cfg_attr(not(test), deny(clippy::unwrap_used, clippy::expect_used))]
 
-use anyhow::{Context, Result};
-use tcc_ipc::{DBUS_ADMIN_PATH, DBUS_ADMIN_SERVICE, DBUS_PATH, DBUS_SERVICE};
+mod bus;
+mod cli;
+mod jsonpath;
+mod stats;
 
-/// Nom de service D-Bus, avec override de développement `TCC_DBUS_SERVICE`.
-fn service_name() -> String {
-    std::env::var("TCC_DBUS_SERVICE")
-        .ok()
-        .filter(|value| !value.trim().is_empty())
-        .unwrap_or_else(|| DBUS_SERVICE.to_owned())
-}
+use anyhow::{Context, Result, bail};
+use clap::{CommandFactory, Parser};
+use serde_json::{Value, json};
+use tcc_core::{Profile, ProfileCollection, ProfileId, Settings};
 
-/// Bus de développement : `TCC_DBUS_BUS=session` pour le mode `--dev-session`.
-fn session_bus() -> bool {
-    std::env::var("TCC_DBUS_BUS").is_ok_and(|value| value.eq_ignore_ascii_case("session"))
-}
-
-#[zbus::proxy(
-    interface = "com.tuxedocomputers.tccd",
-    default_service = "com.tuxedocomputers.tccd",
-    default_path = "/com/tuxedocomputers/tccd"
-)]
-trait Tccd {
-    #[zbus(name = "GetStateJSON")]
-    fn get_state_json(&self) -> zbus::Result<String>;
-    #[zbus(name = "GetProfilesJSON")]
-    fn get_profiles_json(&self) -> zbus::Result<String>;
-    #[zbus(name = "GetSettingsJSON")]
-    fn get_settings_json(&self) -> zbus::Result<String>;
-    #[zbus(name = "GetFanDataJSON")]
-    fn get_fan_data_json(&self) -> zbus::Result<String>;
-    #[zbus(name = "SetTempProfile")]
-    fn set_temp_profile(&self, id: &str) -> zbus::Result<bool>;
-    #[zbus(name = "ClearTempProfile")]
-    fn clear_temp_profile(&self) -> zbus::Result<bool>;
-    #[zbus(name = "Ping")]
-    fn ping(&self) -> zbus::Result<bool>;
-}
-
-/// Service administratif à la demande (`tccd-admin`).
-#[zbus::proxy(
-    interface = "com.tuxedocomputers.tccd.Admin1",
-    default_service = "com.tuxedocomputers.tccd.Admin",
-    default_path = "/com/tuxedocomputers/tccd/Admin"
-)]
-trait Admin1 {
-    #[zbus(name = "Ping")]
-    fn ping(&self) -> zbus::Result<bool>;
-    #[zbus(name = "GetVersion")]
-    fn get_version(&self) -> zbus::Result<String>;
-    /// Voie supportée pour le contrat ; ne pas passer par `Properties.Get`.
-    #[zbus(name = "GetContractVersion")]
-    fn get_contract_version(&self) -> zbus::Result<u32>;
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-enum Command {
-    Status,
-    Profiles,
-    Settings,
-    Fans,
-    Hardware,
-    Timer,
-    Sensors(Option<bool>),
-    Admin,
-    SetTemp(String),
-    ClearTemp,
-    Ping,
-    Help,
-    Version,
-}
-
-fn parse_args(args: impl IntoIterator<Item = String>) -> Result<Command> {
-    let mut iter = args.into_iter();
-    let Some(first) = iter.next() else {
-        return Ok(Command::Status);
-    };
-    match first.as_str() {
-        "status" | "state" => Ok(Command::Status),
-        "profiles" => Ok(Command::Profiles),
-        "settings" => Ok(Command::Settings),
-        "fans" | "fan" => Ok(Command::Fans),
-        "hardware" | "hw" => Ok(Command::Hardware),
-        "timer" | "shutdown-timer" => Ok(Command::Timer),
-        "admin" => Ok(Command::Admin),
-        "sensors" | "sensor" => {
-            let action = iter.next();
-            match action.as_deref() {
-                None | Some("status") => Ok(Command::Sensors(None)),
-                Some("on") | Some("true") => Ok(Command::Sensors(Some(true))),
-                Some("off") | Some("false") => Ok(Command::Sensors(Some(false))),
-                Some(other) => anyhow::bail!("sensors attend on|off|status, pas {other}"),
-            }
-        }
-        "set-temp" => {
-            let id = iter
-                .next()
-                .context("set-temp attend un identifiant de profil")?;
-            if iter.next().is_some() {
-                anyhow::bail!("set-temp n'accepte qu'un seul identifiant");
-            }
-            Ok(Command::SetTemp(id))
-        }
-        "clear-temp" => Ok(Command::ClearTemp),
-        "ping" => Ok(Command::Ping),
-        "--help" | "-h" | "help" => Ok(Command::Help),
-        "--version" | "-V" => Ok(Command::Version),
-        other => anyhow::bail!("commande inconnue: {other} (essayez --help)"),
-    }
-}
+use bus::{Bus, Target};
+use cli::{
+    ChargingCmd, Cli, Cmd, LightbarArg, ProfileCmd, SettingsCmd, TdpCmd, Toggle,
+};
 
 fn main() -> Result<()> {
-    let command = parse_args(std::env::args().skip(1))?;
-    match command {
-        Command::Help => {
-            println!(
-                "tcc-cli {}\n\n\
-                 USAGE:\n    tcc-cli [status|profiles|settings|fans|hardware|timer|admin|sensors [on|off|status]|ping|set-temp <id>|clear-temp]\n\n\
-                 Le CLI est non privilégié et interroge le daemon sur le bus système.",
-                env!("CARGO_PKG_VERSION")
-            );
-            return Ok(());
-        }
-        Command::Version => {
-            println!("tcc-cli {}", env!("CARGO_PKG_VERSION"));
-            return Ok(());
-        }
-        _ => {}
+    let cli = Cli::parse();
+    let command = cli.command.unwrap_or(Cmd::Status);
+    if let Cmd::Completions { shell } = command {
+        clap_complete::generate(shell, &mut Cli::command(), "tcc-cli", &mut std::io::stdout());
+        return Ok(());
     }
-
     let runtime = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
         .context("runtime tokio")?;
-    runtime.block_on(run(command))
+    let dev_session = cli.bus.map_or_else(
+        || std::env::var("TCC_DBUS_BUS").is_ok_and(|v| v.eq_ignore_ascii_case("session")),
+        |bus| bus == cli::BusKind::Session,
+    );
+    let mut ctx = Ctx {
+        bus: Bus::new(dev_session),
+        compact: cli.json,
+    };
+    runtime.block_on(run(&mut ctx, command))
 }
 
-async fn run(command: Command) -> Result<()> {
-    let service = service_name();
-    let connection = if session_bus() {
-        zbus::Connection::session().await
-    } else {
-        zbus::Connection::system().await
-    }
-    .with_context(|| format!("connexion au bus D-Bus ({service}, {DBUS_PATH})"))?;
-    let proxy = TccdProxy::builder(&connection)
-        .destination(service.clone())
-        .context("destination D-Bus tccd")?
-        .path(DBUS_PATH)
-        .context("objet D-Bus tccd")?
-        .build()
-        .await
-        .context("proxy D-Bus tccd")?;
+struct Ctx {
+    bus: Bus,
+    compact: bool,
+}
 
+impl Ctx {
+    /// Affiche un document JSON (joli par défaut, compact avec `--json`).
+    fn emit(&self, value: &Value) -> Result<()> {
+        if self.compact {
+            println!("{}", serde_json::to_string(value)?);
+        } else {
+            println!("{}", serde_json::to_string_pretty(value)?);
+        }
+        Ok(())
+    }
+
+    fn emit_raw(&self, raw: &str) -> Result<()> {
+        let value: Value = serde_json::from_str(raw).context("réponse D-Bus JSON invalide")?;
+        self.emit(&value)
+    }
+
+    /// Confirmation d'une action : texte, ou `{"ok":…}` avec `--json`.
+    fn done(&self, ok: bool, message: &str) -> Result<()> {
+        if self.compact {
+            self.emit(&json!({"ok": ok, "message": message}))
+        } else {
+            println!("{message}");
+            Ok(())
+        }
+    }
+
+    async fn daemon_json(&mut self, target: Target, method: &str) -> Result<String> {
+        self.bus.call(target, method, &()).await
+    }
+
+    async fn load_profiles(&mut self) -> Result<ProfileCollection> {
+        let raw = self.daemon_json(Target::Daemon, "GetProfilesJSON").await?;
+        serde_json::from_str(&raw).context("collection de profils invalide")
+    }
+
+    async fn load_settings(&mut self) -> Result<Settings> {
+        let raw = self.daemon_json(Target::Daemon, "GetSettingsJSON").await?;
+        serde_json::from_str(&raw).context("réglages invalides")
+    }
+
+    async fn save_profiles(&mut self, collection: &ProfileCollection) -> Result<()> {
+        collection.validate().context("collection de profils invalide")?;
+        let payload = serde_json::to_string(collection)?;
+        let ok: bool = self
+            .bus
+            .call(Target::Admin, "SaveProfilesJSON", &payload.as_str())
+            .await?;
+        if !ok {
+            bail!("SaveProfilesJSON a refusé l'écriture");
+        }
+        Ok(())
+    }
+
+    async fn save_settings(&mut self, settings: &Settings) -> Result<()> {
+        settings.validate().context("réglages invalides")?;
+        let payload = serde_json::to_string(settings)?;
+        let ok: bool = self
+            .bus
+            .call(Target::Admin, "SaveSettingsJSON", &payload.as_str())
+            .await?;
+        if !ok {
+            bail!("SaveSettingsJSON a refusé l'écriture");
+        }
+        Ok(())
+    }
+
+    async fn manager_bool(&mut self, method: &str, body: &(impl serde::Serialize + zbus::zvariant::DynamicType)) -> Result<bool> {
+        self.bus.call(Target::Manager, method, body).await
+    }
+}
+
+/// Identifiant ou nom (unique, insensible à la casse) → identifiant.
+fn resolve_profile<'a>(collection: &'a ProfileCollection, query: &str) -> Result<&'a Profile> {
+    if let Some(profile) = collection.get_by_id(query) {
+        return Ok(profile);
+    }
+    let wanted = query.to_lowercase();
+    let mut matches = collection
+        .iter()
+        .filter(|profile| profile.name.to_lowercase() == wanted);
+    match (matches.next(), matches.next()) {
+        (Some(profile), None) => Ok(profile),
+        (Some(_), Some(_)) => bail!("« {query} » correspond à plusieurs profils : utilisez l'id"),
+        _ => bail!("profil introuvable : {query}"),
+    }
+}
+
+fn editable<'a>(collection: &'a mut ProfileCollection, query: &str) -> Result<&'a mut Profile> {
+    let id = resolve_profile(collection, query)?.id.clone();
+    if id.is_builtin_preset() || collection.get(&id).is_some_and(Profile::is_preset) {
+        bail!("« {query} » est un preset : copiez-le d'abord (profile copy)");
+    }
+    collection
+        .get_mut(&id)
+        .ok_or_else(|| anyhow::anyhow!("profil introuvable : {query}"))
+}
+
+/// Contenu d'un argument : littéral, `@fichier` ou `-` (stdin).
+fn read_arg(arg: &str) -> Result<String> {
+    use std::io::Read;
+    if arg == "-" {
+        let mut buffer = String::new();
+        std::io::stdin().read_to_string(&mut buffer).context("lecture stdin")?;
+        Ok(buffer)
+    } else if let Some(path) = arg.strip_prefix('@') {
+        std::fs::read_to_string(path).with_context(|| format!("lecture de {path}"))
+    } else {
+        Ok(arg.to_owned())
+    }
+}
+
+/// Modifie `value[path]` puis relit le résultat via `parse` : une clé inconnue
+/// (ignorée par serde) ou une valeur rejetée est une erreur, pas un no-op.
+fn apply_path<T>(
+    current: &T,
+    path: &str,
+    raw: &str,
+    parse: impl Fn(Value) -> Result<T>,
+) -> Result<T>
+where
+    T: serde::Serialize,
+{
+    let mut document = serde_json::to_value(current)?;
+    let value = jsonpath::parse_value(raw);
+    jsonpath::set_path(&mut document, path, value.clone())?;
+    let updated = parse(document)?;
+    let reread = serde_json::to_value(&updated)?;
+    if jsonpath::get_path(&reread, path).is_none() {
+        bail!("clé inconnue ou valeur rejetée : {path}");
+    }
+    Ok(updated)
+}
+
+async fn run(ctx: &mut Ctx, command: Cmd) -> Result<()> {
     match command {
-        Command::Status => print_json(proxy.get_state_json().await?)?,
-        Command::Profiles => print_json(proxy.get_profiles_json().await?)?,
-        Command::Settings => print_json(proxy.get_settings_json().await?)?,
-        Command::Fans => print_json(proxy.get_fan_data_json().await?)?,
-        Command::Hardware => {
-            let manager = zbus::Proxy::new(
-                &connection,
-                service_name(),
-                DBUS_PATH,
-                "com.tuxedocomputers.tccd.Manager1",
-            )
-            .await
-            .context("proxy Manager1")?;
-            let raw: String = manager
-                .call("GetHardwareSnapshotJSON", &())
-                .await
-                .context("GetHardwareSnapshotJSON")?;
-            print_json(raw)?;
+        Cmd::Status => {
+            let raw = ctx.daemon_json(Target::Daemon, "GetStateJSON").await?;
+            ctx.emit_raw(&raw)
         }
-        Command::Timer => {
-            let manager = zbus::Proxy::new(
-                &connection,
-                service_name(),
-                DBUS_PATH,
-                "com.tuxedocomputers.tccd.Manager1",
-            )
-            .await
-            .context("proxy Manager1")?;
-            let raw: String = manager
-                .call("GetShutdownTimerJSON", &())
-                .await
-                .context("GetShutdownTimerJSON")?;
-            print_json(raw)?;
+        Cmd::Ping => {
+            let ok: bool = ctx.bus.call(Target::Daemon, "Ping", &()).await?;
+            ctx.done(ok, &format!("tccd: {}", if ok { "vivant" } else { "injoignable" }))
         }
-        Command::Sensors(action) => {
-            let manager = zbus::Proxy::new(
-                &connection,
-                service_name(),
-                DBUS_PATH,
-                "com.tuxedocomputers.tccd.Manager1",
-            )
-            .await
-            .context("proxy Manager1")?;
-            match action {
-                Some(enabled) => {
-                    let _: bool = manager
-                        .call("SetSensorDataCollectionStatus", &enabled)
-                        .await
-                        .context("SetSensorDataCollectionStatus")?;
-                    println!(
-                        "collecte capteurs: {}",
-                        if enabled {
-                            "activée (bail 10 s)"
-                        } else {
-                            "désactivée"
-                        }
-                    );
+        Cmd::DaemonVersion => {
+            let version: String = ctx.bus.call(Target::Daemon, "GetVersion", &()).await?;
+            ctx.done(true, &format!("tccd {version}"))
+        }
+        Cmd::Profiles => profile_cmd(ctx, ProfileCmd::Dump).await,
+        // Anciennes commandes, conservées pour les scripts existants.
+        Cmd::SetTemp { profile } => profile_cmd(ctx, ProfileCmd::Use { profile }).await,
+        Cmd::ClearTemp => profile_cmd(ctx, ProfileCmd::Clear).await,
+        Cmd::Profile(sub) => profile_cmd(ctx, sub).await,
+        Cmd::Settings(sub) => settings_cmd(ctx, sub).await,
+        Cmd::Fans => {
+            let raw = ctx.daemon_json(Target::Daemon, "GetFanDataJSON").await?;
+            ctx.emit_raw(&raw)
+        }
+        Cmd::Hardware => {
+            let raw = ctx.daemon_json(Target::Manager, "GetHardwareSnapshotJSON").await?;
+            ctx.emit_raw(&raw)
+        }
+        Cmd::Timer => {
+            let raw = ctx.daemon_json(Target::Manager, "GetShutdownTimerJSON").await?;
+            ctx.emit_raw(&raw)
+        }
+        Cmd::Sensors { action } => sensors_cmd(ctx, action).await,
+        Cmd::Stats { no_sensors } => stats_cmd(ctx, no_sensors).await,
+        Cmd::Charging(sub) => charging_cmd(ctx, sub).await,
+        Cmd::Keyboard { states } => {
+            let payload = read_arg(&states)?;
+            serde_json::from_str::<Value>(&payload).context("JSON des zones clavier invalide")?;
+            let ok = ctx.manager_bool("SetKeyboardStatesJSON", &payload.as_str()).await?;
+            ctx.done(ok, &format!("éclairage clavier appliqué: {ok}"))
+        }
+        Cmd::Lightbar { state } => {
+            let payload = match state {
+                LightbarArg::Off => "null".to_owned(),
+                LightbarArg::Json(arg) => {
+                    let payload = read_arg(&arg)?;
+                    serde_json::from_str::<Value>(&payload).context("JSON lightbar invalide")?;
+                    payload
+                }
+            };
+            let ok = ctx.manager_bool("SetLightbarStatesJSON", &payload.as_str()).await?;
+            ctx.done(ok, &format!("lightbar appliquée: {ok}"))
+        }
+        Cmd::FnLock { state } => {
+            let enabled = state == Toggle::On;
+            let ok = ctx.manager_bool("SetFnLockStatus", &enabled).await?;
+            ctx.done(ok, &format!("Fn Lock {}: {ok}", if enabled { "on" } else { "off" }))
+        }
+        Cmd::Tdp(sub) => tdp_cmd(ctx, sub).await,
+        Cmd::Odm { name, r#override } => {
+            let method = if r#override { "SetOdmProfileOverride" } else { "SetOdmProfile" };
+            let ok: bool = ctx.bus.call(Target::AdminHw, method, &name.as_str()).await?;
+            ctx.done(ok, &format!("profil ODM '{name}': {ok}"))
+        }
+        Cmd::Ctgp { offset } => {
+            let ok: bool = ctx.bus.call(Target::AdminHw, "SetNvidiaCtgpOffset", &offset).await?;
+            ctx.done(ok, &format!("offset cTGP {offset} W: {ok}"))
+        }
+        Cmd::Display => {
+            let raw: String = ctx.bus.call(Target::Session, "GetDisplayInfoJSON", &()).await?;
+            ctx.emit_raw(&raw)
+        }
+        Cmd::Uvc { device, key, value } => {
+            let ok: bool = ctx
+                .bus
+                .call(Target::Session, "SetUvcControl", &(device.as_str(), key.as_str(), value))
+                .await?;
+            ctx.done(ok, &format!("contrôle UVC '{key}'={value}: {}", if ok { "écrit" } else { "déjà à cette valeur" }))
+        }
+        Cmd::Admin => {
+            let ping: bool = ctx.bus.call(Target::Admin, "Ping", &()).await?;
+            let version: String = ctx.bus.call(Target::Admin, "GetVersion", &()).await?;
+            let contract: u32 = ctx.bus.call(Target::Admin, "GetContractVersion", &()).await?;
+            if ctx.compact {
+                ctx.emit(&json!({"ping": ping, "version": version, "contract": contract}))
+            } else {
+                println!("admin: ping={ping}, version={version}, contrat={contract}");
+                Ok(())
+            }
+        }
+        Cmd::Reload => {
+            let ok: bool = ctx.bus.call(Target::Admin, "ReloadConfig", &()).await?;
+            ctx.done(ok, &format!("configuration rechargée: {ok}"))
+        }
+        Cmd::Completions { .. } => Ok(()),
+    }
+}
+
+async fn profile_cmd(ctx: &mut Ctx, sub: ProfileCmd) -> Result<()> {
+    match sub {
+        ProfileCmd::Dump => {
+            let raw = ctx.daemon_json(Target::Daemon, "GetProfilesJSON").await?;
+            ctx.emit_raw(&raw)
+        }
+        ProfileCmd::List => {
+            let collection = ctx.load_profiles().await?;
+            let state: Value =
+                serde_json::from_str(&ctx.daemon_json(Target::Daemon, "GetStateJSON").await?)
+                    .unwrap_or(Value::Null);
+            let active = state["activeProfile"]["id"].as_str().unwrap_or_default().to_owned();
+            if ctx.compact {
+                let list: Vec<Value> = collection
+                    .iter()
+                    .map(|p| {
+                        json!({
+                            "id": p.id.as_str(),
+                            "name": p.name,
+                            "description": p.description,
+                            "isPreset": p.is_preset(),
+                            "active": p.id.as_str() == active,
+                        })
+                    })
+                    .collect();
+                return ctx.emit(&Value::Array(list));
+            }
+            for p in collection.iter() {
+                let mark = if p.id.as_str() == active { '*' } else { ' ' };
+                println!("{mark} {:<28} {}", p.id.as_str(), p.name);
+            }
+            Ok(())
+        }
+        ProfileCmd::Show { profile } => {
+            let collection = ctx.load_profiles().await?;
+            let found = resolve_profile(&collection, &profile)?;
+            ctx.emit(&serde_json::to_value(found)?)
+        }
+        ProfileCmd::Active => {
+            let raw = ctx.daemon_json(Target::Daemon, "GetActiveProfileJSON").await?;
+            ctx.emit_raw(&raw)
+        }
+        ProfileCmd::Use { profile } => {
+            let collection = ctx.load_profiles().await?;
+            let id = resolve_profile(&collection, &profile)?.id.as_str().to_owned();
+            let ok: bool = ctx.bus.call(Target::Daemon, "SetTempProfile", &id.as_str()).await?;
+            ctx.done(ok, &format!("profil temporaire '{id}': {ok}"))
+        }
+        ProfileCmd::Clear => {
+            let ok: bool = ctx.bus.call(Target::Daemon, "ClearTempProfile", &()).await?;
+            ctx.done(ok, &format!("override temporaire supprimé: {ok}"))
+        }
+        ProfileCmd::Create { name } => {
+            let mut collection = ctx.load_profiles().await?;
+            let profile = Profile::new(ProfileId::generate(), name);
+            let id = profile.id.as_str().to_owned();
+            collection.upsert(profile);
+            ctx.save_profiles(&collection).await?;
+            ctx.done(true, &format!("profil créé: {id}"))
+        }
+        ProfileCmd::Copy { from, name } => {
+            let mut collection = ctx.load_profiles().await?;
+            let mut copy = resolve_profile(&collection, &from)?.clone();
+            copy.id = ProfileId::generate();
+            copy.name = name;
+            let id = copy.id.as_str().to_owned();
+            collection.upsert(copy);
+            ctx.save_profiles(&collection).await?;
+            ctx.done(true, &format!("profil copié: {id}"))
+        }
+        ProfileCmd::Delete { profile } => {
+            let mut collection = ctx.load_profiles().await?;
+            let id = editable(&mut collection, &profile)?.id.clone();
+            collection.remove(&id);
+            ctx.save_profiles(&collection).await?;
+            ctx.done(true, &format!("profil supprimé: {}", id.as_str()))
+        }
+        ProfileCmd::Rename { profile, name } => {
+            let mut collection = ctx.load_profiles().await?;
+            editable(&mut collection, &profile)?.name = name;
+            ctx.save_profiles(&collection).await?;
+            ctx.done(true, "profil renommé")
+        }
+        ProfileCmd::Set { profile, key, value } => {
+            if key == "id" || key.starts_with("id.") {
+                bail!("l'identifiant d'un profil est immuable");
+            }
+            let mut collection = ctx.load_profiles().await?;
+            let target = editable(&mut collection, &profile)?;
+            let updated = apply_path(target, &key, &value, |doc| {
+                serde_json::from_value::<Profile>(doc).context("profil invalide")
+            })?;
+            updated.validate().context("profil invalide")?;
+            if updated.extra.len() > target.extra.len() {
+                bail!("clé inconnue : {key}");
+            }
+            *target = updated;
+            ctx.save_profiles(&collection).await?;
+            ctx.done(true, &format!("{key} mis à jour"))
+        }
+        ProfileCmd::Get { profile, key } => {
+            let collection = ctx.load_profiles().await?;
+            let document = serde_json::to_value(resolve_profile(&collection, &profile)?)?;
+            let value = jsonpath::get_path(&document, &key)
+                .with_context(|| format!("clé absente : {key}"))?;
+            ctx.emit(value)
+        }
+        ProfileCmd::Export { profile, file } => {
+            let collection = ctx.load_profiles().await?;
+            let text = serde_json::to_string_pretty(resolve_profile(&collection, &profile)?)?;
+            match file {
+                Some(path) => {
+                    std::fs::write(&path, format!("{text}\n"))
+                        .with_context(|| format!("écriture de {path}"))?;
+                    ctx.done(true, &format!("profil exporté vers {path}"))
                 }
                 None => {
-                    let enabled: bool = manager
-                        .call("GetSensorDataCollectionStatus", &())
-                        .await
-                        .context("GetSensorDataCollectionStatus")?;
-                    println!(
-                        "collecte capteurs: {}",
-                        if enabled { "active" } else { "inactive" }
-                    );
+                    println!("{text}");
+                    Ok(())
                 }
             }
         }
-        Command::Admin => {
-            let admin = Admin1Proxy::builder(&connection)
-                .destination(DBUS_ADMIN_SERVICE)
-                .context("destination D-Bus admin")?
-                .path(DBUS_ADMIN_PATH)
-                .context("chemin D-Bus admin")?
-                .build()
-                .await
-                .context("service admin non installé ou non activé (TCC_WITH_ADMIN=1)")?;
-            let ping = admin
-                .ping()
-                .await
-                .context("service admin non installé ou non activé (TCC_WITH_ADMIN=1)")?;
-            let version = admin.get_version().await.context("Admin1.GetVersion")?;
-            let contract = admin
-                .get_contract_version()
-                .await
-                .context("Admin1.GetContractVersion")?;
-            println!("admin: ping={ping}, version={version}, contrat={contract}");
+        ProfileCmd::Import { file } => {
+            let text = read_arg(&if file == "-" { file } else { format!("@{file}") })?;
+            let mut profile: Profile =
+                serde_json::from_str(&text).context("profil importé invalide")?;
+            // Toujours un nouvel identifiant : pas de collision ni de tombstone.
+            profile.id = ProfileId::generate();
+            profile.validate().context("profil importé invalide")?;
+            let id = profile.id.as_str().to_owned();
+            let mut collection = ctx.load_profiles().await?;
+            collection.upsert(profile);
+            ctx.save_profiles(&collection).await?;
+            ctx.done(true, &format!("profil importé: {id}"))
         }
-        Command::SetTemp(id) => {
-            let ok = proxy.set_temp_profile(&id).await?;
-            println!("profil temporaire '{id}': {ok}");
+    }
+}
+
+async fn settings_cmd(ctx: &mut Ctx, sub: SettingsCmd) -> Result<()> {
+    match sub {
+        SettingsCmd::Show => {
+            let raw = ctx.daemon_json(Target::Daemon, "GetSettingsJSON").await?;
+            ctx.emit_raw(&raw)
         }
-        Command::ClearTemp => {
-            let ok = proxy.clear_temp_profile().await?;
-            println!("override temporaire supprimé: {ok}");
+        SettingsCmd::Get { key } => {
+            let settings = ctx.load_settings().await?;
+            let document = serde_json::to_value(&settings)?;
+            let value = jsonpath::get_path(&document, &key)
+                .with_context(|| format!("clé absente : {key}"))?;
+            ctx.emit(value)
         }
-        Command::Ping => {
-            let ok = proxy.ping().await?;
-            println!("tccd: {}", if ok { "vivant" } else { "injoignable" });
+        SettingsCmd::Set { key, value } => {
+            if key.starts_with("deletedProfileIds") {
+                bail!("les tombstones de profils ne se modifient pas directement");
+            }
+            let settings = ctx.load_settings().await?;
+            let updated = apply_path(&settings, &key, &value, |doc| {
+                serde_json::from_value::<Settings>(doc).context("réglages invalides")
+            })?;
+            if updated.extra.len() > settings.extra.len() {
+                bail!("clé inconnue : {key}");
+            }
+            ctx.save_settings(&updated).await?;
+            ctx.done(true, &format!("{key} mis à jour"))
         }
-        Command::Help | Command::Version => {}
+    }
+}
+
+async fn sensors_cmd(ctx: &mut Ctx, action: Option<Toggle>) -> Result<()> {
+    match action {
+        None | Some(Toggle::Status) => {
+            let on: bool = ctx
+                .bus
+                .call(Target::Manager, "GetSensorDataCollectionStatus", &())
+                .await?;
+            ctx.done(on, &format!("collecte capteurs: {}", if on { "active" } else { "inactive" }))
+        }
+        Some(toggle) => {
+            let enabled = toggle == Toggle::On;
+            ctx.manager_bool("SetSensorDataCollectionStatus", &enabled).await?;
+            ctx.done(
+                true,
+                &format!(
+                    "collecte capteurs: {}",
+                    if enabled { "activée (bail 10 s)" } else { "désactivée" }
+                ),
+            )
+        }
+    }
+}
+
+async fn stats_cmd(ctx: &mut Ctx, no_sensors: bool) -> Result<()> {
+    let root = std::env::var("TCC_POWER_SUPPLY_ROOT")
+        .unwrap_or_else(|_| "/sys/class/power_supply".to_owned());
+    // La mesure CPU bloque ~200 ms : hors du runtime async.
+    let usage = tokio::task::spawn_blocking(|| stats::cpu_usage(std::time::Duration::from_millis(200)))
+        .await
+        .ok()
+        .flatten();
+    let battery = stats::battery(std::path::Path::new(&root));
+
+    let mut daemon_error: Option<String> = None;
+    let state = match ctx.daemon_json(Target::Daemon, "GetStateJSON").await {
+        Ok(raw) => serde_json::from_str::<Value>(&raw).ok(),
+        Err(error) => {
+            daemon_error = Some(format!("{error:#}"));
+            None
+        }
+    };
+
+    let mut cpu_power: Option<f64> = None;
+    let mut cpu_temp: Option<f64> = None;
+    if state.is_some() && !no_sensors {
+        if let Ok(raw) = ctx.daemon_json(Target::Manager, "GetHardwareSnapshotJSON").await {
+            let snapshot: Value = serde_json::from_str(&raw).unwrap_or(Value::Null);
+            let sensors = &snapshot["sensors"];
+            if sensors["enabled"].as_bool() == Some(true) {
+                cpu_power = sensors["cpu"]["packagePowerW"].as_f64();
+                cpu_temp = sensors["cpu"]["temperatureC"].as_f64();
+            } else {
+                // Bail de 10 s : renouvelé par les lectures suivantes ; la
+                // première mesure de puissance arrive donc au 2ᵉ appel.
+                let _ = ctx.manager_bool("SetSensorDataCollectionStatus", &true).await;
+            }
+        }
+    }
+
+    let active = state.as_ref().map(|s| &s["activeProfile"]);
+    let report = json!({
+        "daemon": state.is_some(),
+        "daemonError": daemon_error,
+        "profile": active.map(|a| json!({"id": a["id"], "name": a["name"], "source": a["source"]})),
+        "ppd": state.as_ref().map(|s| s["ppdProfile"].clone()),
+        "powerSource": state.as_ref().map(|s| s["powerSource"].clone()),
+        "manualOverride": state.as_ref().map(|s| s["manualOverride"].clone()),
+        "cpu": {"usagePercent": usage, "packagePowerW": cpu_power, "temperatureC": cpu_temp},
+        "battery": battery,
+    });
+    if ctx.compact {
+        return ctx.emit(&report);
+    }
+    let fmt = |value: Option<f64>, unit: &str| value.map_or_else(|| "—".to_owned(), |v| format!("{v:.1} {unit}"));
+    match &state {
+        Some(_) => println!(
+            "profil   : {} ({})",
+            report["profile"]["name"].as_str().unwrap_or("?"),
+            report["profile"]["id"].as_str().unwrap_or("?")
+        ),
+        None => println!("profil   : daemon injoignable"),
+    }
+    println!(
+        "état     : {} / ppd {}",
+        report["powerSource"].as_str().unwrap_or("?"),
+        report["ppd"].as_str().unwrap_or("—")
+    );
+    println!(
+        "cpu      : {} · {} · {}",
+        fmt(usage, "%"),
+        fmt(cpu_power, "W"),
+        fmt(cpu_temp, "°C")
+    );
+    if report["battery"]["present"] == true {
+        println!(
+            "batterie : {} % · {} · {}",
+            report["battery"]["percent"],
+            report["battery"]["status"].as_str().unwrap_or("?"),
+            fmt(report["battery"]["powerW"].as_f64(), "W")
+        );
+    } else {
+        println!("batterie : absente");
     }
     Ok(())
 }
 
-#[cfg(test)]
-mod extra_tests {
-    use super::*;
-
-    #[test]
-    fn parses_fans() {
-        assert_eq!(parse_args(args(&["fans"])).unwrap(), Command::Fans);
-        assert_eq!(parse_args(args(&["fan"])).unwrap(), Command::Fans);
-    }
-
-    #[test]
-    fn parses_admin_and_timer() {
-        assert_eq!(parse_args(args(&["admin"])).unwrap(), Command::Admin);
-        assert_eq!(parse_args(args(&["timer"])).unwrap(), Command::Timer);
-        assert_eq!(
-            parse_args(args(&["shutdown-timer"])).unwrap(),
-            Command::Timer
-        );
-    }
-
-    #[test]
-    fn parses_hardware_and_sensors() {
-        assert_eq!(parse_args(args(&["hardware"])).unwrap(), Command::Hardware);
-        assert_eq!(
-            parse_args(args(&["sensors"])).unwrap(),
-            Command::Sensors(None)
-        );
-        assert_eq!(
-            parse_args(args(&["sensors", "on"])).unwrap(),
-            Command::Sensors(Some(true))
-        );
-        assert_eq!(
-            parse_args(args(&["sensors", "off"])).unwrap(),
-            Command::Sensors(Some(false))
-        );
-        assert!(parse_args(args(&["sensors", "nope"])).is_err());
-    }
-
-    fn args(values: &[&str]) -> Vec<String> {
-        values.iter().map(|value| (*value).to_owned()).collect()
-    }
+async fn charging_cmd(ctx: &mut Ctx, sub: ChargingCmd) -> Result<()> {
+    let (method, ok) = match sub {
+        ChargingCmd::Show => {
+            let raw = ctx.daemon_json(Target::Manager, "GetHardwareSnapshotJSON").await?;
+            let snapshot: Value = serde_json::from_str(&raw).context("snapshot invalide")?;
+            return ctx.emit(&snapshot["charging"]);
+        }
+        ChargingCmd::Profile { name } => ("SetChargingProfile", ctx.manager_bool("SetChargingProfile", &name.as_str()).await?),
+        ChargingCmd::Priority { name } => ("SetChargingPriority", ctx.manager_bool("SetChargingPriority", &name.as_str()).await?),
+        ChargingCmd::Start { percent } => ("SetChargeStartThreshold", ctx.manager_bool("SetChargeStartThreshold", &i32::from(percent)).await?),
+        ChargingCmd::End { percent } => ("SetChargeEndThreshold", ctx.manager_bool("SetChargeEndThreshold", &i32::from(percent)).await?),
+        ChargingCmd::Type { name } => ("SetChargeType", ctx.manager_bool("SetChargeType", &name.as_str()).await?),
+    };
+    ctx.done(ok, &format!("{method}: {ok}"))
 }
 
-fn print_json(raw: String) -> Result<()> {
-    let value: serde_json::Value =
-        serde_json::from_str(&raw).context("réponse D-Bus JSON invalide")?;
-    println!("{}", serde_json::to_string_pretty(&value)?);
-    Ok(())
+async fn tdp_cmd(ctx: &mut Ctx, sub: TdpCmd) -> Result<()> {
+    match sub {
+        TdpCmd::Get => {
+            let values: Vec<i32> = ctx.bus.call(Target::AdminHw, "GetTdpValues", &()).await?;
+            ctx.emit(&json!(values))
+        }
+        TdpCmd::Set { watts } => {
+            let ok: bool = ctx.bus.call(Target::AdminHw, "SetTdpValues", &watts).await?;
+            ctx.done(ok, &format!("TDP {watts:?} W: {ok}"))
+        }
+        TdpCmd::Reset => {
+            let ok: bool = ctx
+                .bus
+                .call(Target::AdminHw, "SetTdpValues", &Vec::<i32>::new())
+                .await?;
+            ctx.done(ok, &format!("TDP remis aux maxima firmware: {ok}"))
+        }
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
 
-    fn args(values: &[&str]) -> Vec<String> {
-        values.iter().map(|value| (*value).to_owned()).collect()
+    fn collection() -> ProfileCollection {
+        ProfileCollection::new(vec![
+            Profile::new("custom-a", "Travail"),
+            Profile::new("custom-b", "Jeu"),
+        ])
     }
 
     #[test]
-    fn default_is_status() {
-        assert_eq!(parse_args(args(&[])).unwrap(), Command::Status);
+    fn resolves_by_id_and_by_name() {
+        let collection = collection();
+        assert_eq!(resolve_profile(&collection, "custom-a").unwrap().name, "Travail");
+        assert_eq!(resolve_profile(&collection, "jeu").unwrap().id.as_str(), "custom-b");
+        assert!(resolve_profile(&collection, "nope").is_err());
     }
 
     #[test]
-    fn parses_set_temp() {
-        assert_eq!(
-            parse_args(args(&["set-temp", "__office__"])).unwrap(),
-            Command::SetTemp("__office__".to_owned())
-        );
+    fn ambiguous_name_is_rejected() {
+        let collection = ProfileCollection::new(vec![
+            Profile::new("a", "Même"),
+            Profile::new("b", "même"),
+        ]);
+        assert!(resolve_profile(&collection, "MÊME").is_err() || resolve_profile(&collection, "même").is_err());
     }
 
     #[test]
-    fn rejects_unknown_command() {
-        assert!(parse_args(args(&["nope"])).is_err());
-        assert!(parse_args(args(&["set-temp"])).is_err());
-        assert!(parse_args(args(&["set-temp", "a", "b"])).is_err());
+    fn apply_path_updates_and_rejects_unknown_keys() {
+        let profile = Profile::new("custom-a", "Travail");
+        let parse = |doc: Value| serde_json::from_value::<Profile>(doc).map_err(Into::into);
+        let updated = apply_path(&profile, "name", "Bureau", parse).unwrap();
+        assert_eq!(updated.name, "Bureau");
+        // Une clé imbriquée inconnue est perdue au décodage : erreur.
+        assert!(apply_path(&profile, "display.nonexistent", "1", parse).is_err());
+    }
+
+    #[test]
+    fn presets_are_not_editable() {
+        let mut collection =
+            ProfileCollection::new(vec![Profile::new("__office__", "Office")]);
+        assert!(editable(&mut collection, "__office__").is_err());
     }
 }

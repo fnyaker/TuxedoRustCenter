@@ -9,8 +9,14 @@ description = "Outils de diagnostic TuxedoRustCenter"
 
 [dependencies]
 anyhow.workspace = true
+clap.workspace = true
+clap_complete.workspace = true
+serde.workspace = true
 serde_json.workspace = true
 tcc-core = { path = "../tcc-core" }
 tcc-ipc = { path = "../tcc-ipc" }
 tokio.workspace = true
 zbus.workspace = true
+
+[dev-dependencies]
+tempfile.workspace = true

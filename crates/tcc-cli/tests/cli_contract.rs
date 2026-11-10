@@ -30,7 +30,7 @@ fn help_and_version_do_not_need_a_daemon() {
         String::from_utf8_lossy(&help.stderr)
     );
     let stdout = String::from_utf8_lossy(&help.stdout);
-    assert!(stdout.contains("USAGE"));
+    assert!(stdout.contains("Usage"));
     assert!(stdout.contains("tcc-cli"));
 
     let version = run(&["--version"]);
@@ -56,7 +56,7 @@ fn unknown_command_and_missing_argument_are_usage_errors() {
     assert!(!unknown.status.success());
     let stderr = String::from_utf8_lossy(&unknown.stderr);
     assert!(
-        stderr.contains("commande inconnue"),
+        stderr.contains("unrecognized subcommand"),
         "stderr inattendu: {stderr}"
     );
 
@@ -64,7 +64,7 @@ fn unknown_command_and_missing_argument_are_usage_errors() {
     assert!(!missing.status.success());
     let stderr = String::from_utf8_lossy(&missing.stderr);
     assert!(
-        stderr.contains("set-temp attend"),
+        stderr.contains("required arguments"),
         "stderr inattendu: {stderr}"
     );
 
@@ -72,7 +72,7 @@ fn unknown_command_and_missing_argument_are_usage_errors() {
     assert!(!extra.status.success());
     let stderr = String::from_utf8_lossy(&extra.stderr);
     assert!(
-        stderr.contains("qu'un seul identifiant"),
+        stderr.contains("unexpected argument"),
         "stderr inattendu: {stderr}"
     );
 }
@@ -82,7 +82,17 @@ fn explicit_commands_also_fail_cleanly_without_daemon() {
     for arguments in [
         vec!["status"],
         vec!["profiles"],
-        vec!["settings"],
+        vec!["settings", "show"],
+        vec!["profile", "list"],
+        vec!["profile", "use", "x"],
+        vec!["profile", "set", "x", "name", "y"],
+        vec!["settings", "set", "fahrenheit", "true"],
+        vec!["charging", "show"],
+        vec!["charging", "end", "80"],
+        vec!["tdp", "get"],
+        vec!["display"],
+        vec!["admin"],
+        vec!["reload"],
         vec!["fans"],
         vec!["fan"],
         vec!["ping"],
@@ -100,4 +110,27 @@ fn explicit_commands_also_fail_cleanly_without_daemon() {
             "{arguments:?}: stderr inattendu: {stderr}"
         );
     }
+}
+
+#[test]
+fn stats_degrades_gracefully_without_daemon() {
+    // stats reste utile (CPU/batterie locaux) quand le daemon est absent.
+    let output = run(&["stats", "--json"]);
+    assert!(output.status.success());
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    assert!(stdout.contains("\"daemon\":false"), "stdout inattendu: {stdout}");
+}
+
+#[test]
+fn completions_do_not_need_a_daemon() {
+    let output = run(&["completions", "bash"]);
+    assert!(output.status.success());
+    assert!(String::from_utf8_lossy(&output.stdout).contains("tcc-cli"));
+}
+
+#[test]
+fn out_of_range_threshold_is_a_usage_error() {
+    let output = run(&["charging", "end", "101"]);
+    assert!(!output.status.success());
+    assert!(String::from_utf8_lossy(&output.stderr).contains("101"));
 }

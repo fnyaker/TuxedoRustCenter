@@ -16,7 +16,7 @@
 %bcond_with gpui
 
 Name:           tuxedo-rust-center
-Version:        0.1.3
+Version:        0.1.4
 Release:        1%{?dist}
 Summary:        Native Qt 6 TUXEDO Control Center rewrite
 
@@ -193,6 +193,10 @@ fi
 
 %postun
 %systemd_postun_with_restart tccd.service
+
+* Tue Nov 10 2026 TuxedoRustCenter contributors <maintainers@tuxedorustcenter.invalid> - 0.1.4-1
+- tcc-cli stats : la puissance CPU du paquet est de nouveau renvoyée (le
+  plugin Omarchy l'affiche).
 
 %changelog
 * Tue Nov 10 2026 TuxedoRustCenter contributors <maintainers@tuxedorustcenter.invalid> - 0.1.3-1

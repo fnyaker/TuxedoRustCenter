@@ -10,7 +10,7 @@
 # Aucun fichier dans /opt. Aucun runtime Node/Python. Aucun setuid.
 
 pkgname=tuxedo-rust-center
-pkgver=0.1.3
+pkgver=0.1.4
 pkgrel=1
 # tccd-admin (phase 1) : installé PAR DÉFAUT (activation D-Bus à la demande).
 # Passer à 0 pour un paquet sans service admin.

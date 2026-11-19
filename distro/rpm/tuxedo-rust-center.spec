@@ -16,7 +16,7 @@
 %bcond_with gpui
 
 Name:           tuxedo-rust-center
-Version:        0.1.4
+Version:        0.1.5
 Release:        1%{?dist}
 Summary:        Native Qt 6 TUXEDO Control Center rewrite
 
@@ -194,11 +194,16 @@ fi
 %postun
 %systemd_postun_with_restart tccd.service
 
+%changelog
+* Thu Nov 19 2026 TuxedoRustCenter contributors <maintainers@tuxedorustcenter.invalid> - 0.1.5-1
+- tccd ne laisse plus cpufreq/boost à 0 après un profil Saver : le turbo est
+  réappliqué dans les deux sens, écrit par politique, et laissé à
+  power-profiles-daemon avec amd_pstate.
+
 * Tue Nov 10 2026 TuxedoRustCenter contributors <maintainers@tuxedorustcenter.invalid> - 0.1.4-1
 - tcc-cli stats : la puissance CPU du paquet est de nouveau renvoyée (le
   plugin Omarchy l'affiche).
 
-%changelog
 * Tue Nov 10 2026 TuxedoRustCenter contributors <maintainers@tuxedorustcenter.invalid> - 0.1.3-1
 - Interface gpui complète (dashboard avec stats GPU, profils, éditeur avec
   courbe de ventilation éditable, outils, réglages) ; tccd-admin accepte une

@@ -25,6 +25,9 @@ ignore = [
     "RUSTSEC-2026-0370",
     "RUSTSEC-2026-0371",
     "RUSTSEC-2026-0372",
+    # chrono : « unmaintained » (aucune vulnérabilité). Utilisée par tcc-daemon ;
+    # migration vers jiff ou time suivie séparément, retirer cette entrée après.
+    "RUSTSEC-2026-0543",
 ]
 
 [licenses]

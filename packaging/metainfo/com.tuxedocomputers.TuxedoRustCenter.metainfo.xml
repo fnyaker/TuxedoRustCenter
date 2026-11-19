@@ -81,6 +81,11 @@
   <content_rating type="oars-1.1"/>
 
   <releases>
+    <release version="0.1.5" date="2026-11-19" type="development">
+      <description>
+        <p>Le boost CPU n'est plus laissé désactivé après un profil d'économie d'énergie.</p>
+      </description>
+    </release>
     <release version="0.1.4" date="2026-11-10" type="development">
       <description>
         <p>La puissance CPU est de nouveau affichée par tcc-cli stats et le plugin Omarchy.</p>

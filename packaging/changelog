@@ -1,3 +1,11 @@
+tuxedo-rust-center (0.1.5-1) noble; urgency=medium
+
+  * tccd ne laisse plus cpufreq/boost à 0 après un profil Saver : le turbo
+    est réappliqué dans les deux sens, écrit par politique, et laissé à
+    power-profiles-daemon avec amd_pstate.
+
+ -- TuxedoRustCenter contributors <maintainers@tuxedorustcenter.invalid>  Thu, 19 Nov 2026 15:00:00 +0000
+
 tuxedo-rust-center (0.1.4-1) noble; urgency=medium
 
   * tcc-cli stats : la puissance CPU du paquet est de nouveau renvoyée (le

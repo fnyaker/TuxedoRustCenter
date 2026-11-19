@@ -13,7 +13,7 @@
 
 use tcc_core::{CpuProfile, FrequencyLimit, Profile, Settings};
 use tcc_hw::backlight;
-use tcc_hw::cpu::CpuController;
+use tcc_hw::cpu::{CpuController, ScalingDriver};
 use tcc_hw::error::HwError;
 use tcc_hw::sysfs::SysfsRoot;
 
@@ -164,18 +164,38 @@ fn apply_cpu(profile: &Profile, ppd_active: bool, root: &SysfsRoot, report: &mut
         }
     }
 
-    if profile.cpu.no_turbo {
-        match cpu.set_no_turbo(true) {
-            Ok(()) => report.notes.push("turbo désactivé".to_owned()),
-            Err(HwError::NotSupported(_)) => match cpu.set_boost(false) {
-                Ok(()) => report.notes.push("boost désactivé".to_owned()),
-                Err(HwError::NotSupported(_)) => {
-                    report.notes.push("turbo/boost non exposé".to_owned());
-                }
-                Err(error) => report.errors.push(format!("boost: {error}")),
-            },
-            Err(error) => report.errors.push(format!("no_turbo: {error}")),
-        }
+    // Avec amd_pstate, power-profiles-daemon pilote `boost` par politique
+    // (power-saver le coupe, les autres profils le rétablissent) : on lui
+    // laisse la main, comme pour l'EPP, pour ne pas se battre avec lui.
+    let ppd_owns_boost = ppd_active
+        && matches!(
+            cpu.scaling_driver(),
+            ScalingDriver::AmdPstate | ScalingDriver::AmdPstateEpp
+        );
+    if ppd_owns_boost {
+        report
+            .notes
+            .push("boost laissé à power-profiles-daemon (D4)".to_owned());
+        return;
+    }
+
+    // Le turbo doit être réappliqué dans les deux sens : sinon un profil qui
+    // le coupe (ex. Saver) le laisse coupé pour les profils suivants.
+    let no_turbo = profile.cpu.no_turbo;
+    match cpu.set_no_turbo(no_turbo) {
+        Ok(()) => report.notes.push(
+            if no_turbo { "turbo désactivé" } else { "turbo activé" }.to_owned(),
+        ),
+        Err(HwError::NotSupported(_)) => match cpu.set_boost(!no_turbo) {
+            Ok(()) => report.notes.push(
+                if no_turbo { "boost désactivé" } else { "boost activé" }.to_owned(),
+            ),
+            Err(HwError::NotSupported(_)) => {
+                report.notes.push("turbo/boost non exposé".to_owned());
+            }
+            Err(error) => report.errors.push(format!("boost: {error}")),
+        },
+        Err(error) => report.errors.push(format!("no_turbo: {error}")),
     }
 }
 

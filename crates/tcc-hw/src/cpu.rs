@@ -482,8 +482,25 @@ impl CpuController {
         self.root.write_bool(path, no_turbo)
     }
 
-    /// Active ou désactive le boost via `cpufreq/boost` (acpi-cpufreq/amd).
+    /// Active ou désactive le boost, politique par politique
+    /// (`cpuN/cpufreq/boost`, comme le fait power-profiles-daemon).
+    ///
+    /// Le fichier global `cpufreq/boost` n'est utilisé qu'en repli, quand aucune
+    /// politique n'expose `boost` (anciens `acpi-cpufreq`). L'écrire à 0 sous
+    /// `amd_pstate` empêche ensuite toute réactivation par politique (EINVAL).
     pub fn set_boost(&self, enabled: bool) -> Result<()> {
+        let mut written = 0usize;
+        for policy in self.policies.iter().filter(|policy| policy.is_active()) {
+            let path = format!("devices/system/cpu/cpu{}/cpufreq/boost", policy.cpu);
+            if !self.root.is_file(&path) {
+                continue;
+            }
+            self.root.write_bool(path, enabled)?;
+            written += 1;
+        }
+        if written > 0 {
+            return Ok(());
+        }
         let path = "devices/system/cpu/cpufreq/boost";
         if !self.root.is_file(path) {
             return Err(HwError::NotSupported("cpufreq/boost"));
@@ -779,8 +796,30 @@ mod tests {
             read(dir.path(), "devices/system/cpu/intel_pstate/no_turbo"),
             "1"
         );
+        // Sans boost par politique : repli sur le fichier global.
         cpu.set_boost(true).unwrap();
         assert_eq!(read(dir.path(), "devices/system/cpu/cpufreq/boost"), "1");
+    }
+
+    #[test]
+    fn boost_is_written_per_policy_when_exposed() {
+        let (dir, root) = fixture();
+        for cpu in 0..4 {
+            write(dir.path(), &format!("devices/system/cpu/cpu{cpu}/cpufreq/boost"), "1\n");
+        }
+        let cpu = CpuController::new(root).unwrap();
+        cpu.set_boost(false).unwrap();
+        for n in 0..4 {
+            assert_eq!(
+                read(dir.path(), &format!("devices/system/cpu/cpu{n}/cpufreq/boost")),
+                "0"
+            );
+        }
+        // Le global n'est pas touché.
+        assert_eq!(read(dir.path(), "devices/system/cpu/cpufreq/boost"), "0");
+        cpu.set_boost(true).unwrap();
+        assert_eq!(read(dir.path(), "devices/system/cpu/cpu3/cpufreq/boost"), "1");
+        assert_eq!(read(dir.path(), "devices/system/cpu/cpufreq/boost"), "0");
     }
 
     #[test]

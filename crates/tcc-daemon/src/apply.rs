@@ -184,11 +184,21 @@ fn apply_cpu(profile: &Profile, ppd_active: bool, root: &SysfsRoot, report: &mut
     let no_turbo = profile.cpu.no_turbo;
     match cpu.set_no_turbo(no_turbo) {
         Ok(()) => report.notes.push(
-            if no_turbo { "turbo désactivé" } else { "turbo activé" }.to_owned(),
+            if no_turbo {
+                "turbo désactivé"
+            } else {
+                "turbo activé"
+            }
+            .to_owned(),
         ),
         Err(HwError::NotSupported(_)) => match cpu.set_boost(!no_turbo) {
             Ok(()) => report.notes.push(
-                if no_turbo { "boost désactivé" } else { "boost activé" }.to_owned(),
+                if no_turbo {
+                    "boost désactivé"
+                } else {
+                    "boost activé"
+                }
+                .to_owned(),
             ),
             Err(HwError::NotSupported(_)) => {
                 report.notes.push("turbo/boost non exposé".to_owned());

@@ -805,20 +805,30 @@ mod tests {
     fn boost_is_written_per_policy_when_exposed() {
         let (dir, root) = fixture();
         for cpu in 0..4 {
-            write(dir.path(), &format!("devices/system/cpu/cpu{cpu}/cpufreq/boost"), "1\n");
+            write(
+                dir.path(),
+                &format!("devices/system/cpu/cpu{cpu}/cpufreq/boost"),
+                "1\n",
+            );
         }
         let cpu = CpuController::new(root).unwrap();
         cpu.set_boost(false).unwrap();
         for n in 0..4 {
             assert_eq!(
-                read(dir.path(), &format!("devices/system/cpu/cpu{n}/cpufreq/boost")),
+                read(
+                    dir.path(),
+                    &format!("devices/system/cpu/cpu{n}/cpufreq/boost")
+                ),
                 "0"
             );
         }
         // Le global n'est pas touché.
         assert_eq!(read(dir.path(), "devices/system/cpu/cpufreq/boost"), "0");
         cpu.set_boost(true).unwrap();
-        assert_eq!(read(dir.path(), "devices/system/cpu/cpu3/cpufreq/boost"), "1");
+        assert_eq!(
+            read(dir.path(), "devices/system/cpu/cpu3/cpufreq/boost"),
+            "1"
+        );
         assert_eq!(read(dir.path(), "devices/system/cpu/cpufreq/boost"), "0");
     }
 
